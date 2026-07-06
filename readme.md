@@ -17,9 +17,8 @@ Jenkins (self-hosted on EC2, configured via Ansible)
             EKS (Elastic Kubernetes Service)
                     │
                     ├── Deployment + HPA
-                    ├── Ingress (nginx)
-                    ├── Prometheus + Grafana (monitoring)
-                    └── Velero (backup / DR to S3)
+                    └── Ingress (nginx)
+
 ```
 ---
 
