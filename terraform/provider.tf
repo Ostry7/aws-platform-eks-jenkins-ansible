@@ -11,6 +11,7 @@ terraform {
     region         = "eu-north-1"
     dynamodb_table = "terraform-lock"
     encrypt        = true
+    use_lockfile = true
   }
 }
 
