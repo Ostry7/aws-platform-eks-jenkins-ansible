@@ -15,5 +15,7 @@ jobs:
       - run: terraform apply -auto-approve
         working-directory: terraform
         env:
+          TF_VAR_public_key: ${{ secrets.AWS_PUBLIC_KEY }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: eu-north-1
