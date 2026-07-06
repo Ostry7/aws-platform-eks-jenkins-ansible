@@ -8,6 +8,6 @@ terraform {
 }
 
 provider "aws" {
-  region = eu-north-1     # Europe(Stockholm)
-  profile = roboticusr    #IAM created 
+  region  = "eu-north-1" # Europe(Stockholm)
+  profile = "roboticusr" #IAM created 
 }
