@@ -25,6 +25,11 @@ resource "aws_vpc" "jenkins_vpc" {
   }
 }
 
+resource "aws_key_pair" "jenkins_key" {
+  key_name   = "jenkins-key"
+  public_key = var.public_key
+}
+
 resource "aws_subnet" "jenkins_subnet" {
   vpc_id            = aws_vpc.jenkins_vpc.id
   cidr_block        = "172.16.10.0/24"
@@ -96,11 +101,6 @@ resource "aws_security_group" "jenkins_sg" {
     Name  = "jenkins-sg"
     usage = "Jenkins"
   }
-}
-
-resource "aws_key_pair" "jenkins_key" {
-  key_name   = "jenkins-key"
-  public_key = file("~/.ssh/id_rsa.pub")
 }
 
 resource "aws_network_interface" "jenkins_network_interface" {
