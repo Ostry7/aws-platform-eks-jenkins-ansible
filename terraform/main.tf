@@ -20,6 +20,7 @@ resource "aws_vpc" "jenkins_vpc" {
   cidr_block = "172.16.0.0/16"
 
   tags = {
+    Name  = "jenkins-vpc"
     usage = "Jenkins"
   }
 }
@@ -30,6 +31,7 @@ resource "aws_subnet" "jenkins_subnet" {
   availability_zone = "eu-north-1a"
 
   tags = {
+    Name  = "jenkins-subnet"
     usage = "Jenkins"
   }
 }
@@ -38,6 +40,7 @@ resource "aws_internet_gateway" "jenkins_igw" {
   vpc_id = aws_vpc.jenkins_vpc.id
 
   tags = {
+    Name  = "jenkins-igw"
     usage = "Jenkins"
   }
 }
@@ -51,6 +54,7 @@ resource "aws_route_table" "jenkins_rt" {
   }
 
   tags = {
+    Name  = "jenkins-rt"
     usage = "Jenkins"
   }
 }
@@ -89,6 +93,7 @@ resource "aws_security_group" "jenkins_sg" {
   }
 
   tags = {
+    Name  = "jenkins-sg"
     usage = "Jenkins"
   }
 }
@@ -113,6 +118,7 @@ resource "aws_eip" "jenkins_eip" {
   network_interface = aws_network_interface.jenkins_network_interface.id
 
   tags = {
+    Name  = "jenkins-eip"
     usage = "Jenkins"
   }
 }
@@ -127,16 +133,17 @@ resource "aws_instance" "jenkinshost" {
   }
 
   tags = {
+    Name  = "jenkins-master"
     usage = "Jenkins-Master"
   }
 
-# set hostname
-provisioner "remote-exec" {
-  inline = ["sudo hostnamectl set-hostname jenkins-master"]
-}
+  # set hostname
+  provisioner "remote-exec" {
+    inline = ["sudo hostnamectl set-hostname jenkins-master"]
+  }
   connection {
     type        = "ssh"
-    user        = "ubuntu" 
+    user        = "ubuntu"
     private_key = file("~/.ssh/id_rsa")
     host        = aws_eip.jenkins_eip.public_ip
   }
