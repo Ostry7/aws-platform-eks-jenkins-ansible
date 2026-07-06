@@ -137,15 +137,4 @@ resource "aws_instance" "jenkinshost" {
     usage = "Jenkins-Master"
   }
 
-  # set hostname
-  provisioner "remote-exec" {
-    inline = ["sudo hostnamectl set-hostname jenkins-master"]
-  }
-  connection {
-    type        = "ssh"
-    user        = "ubuntu"
-    private_key = file("~/.ssh/id_rsa")
-    host        = aws_eip.jenkins_eip.public_ip
-  }
-
 }
