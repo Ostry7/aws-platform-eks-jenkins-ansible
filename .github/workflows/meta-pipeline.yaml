@@ -41,11 +41,16 @@ jobs:
 
       - name: Wait for SSH to be ready
         run: |
-          timeout 120 bash -c '
-            until ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o ConnectTimeout=5 ubuntu@${{ steps.tf_output.outputs.ip }} "echo ok"; do
-              echo "Waiting for SSH..."
-              sleep 5
-            done
+          IP="${{ steps.tf_output.outputs.ip }}"
+          end=$((SECONDS+120))
+          until ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o ConnectTimeout=5 ubuntu@$IP "echo ok"; do
+            if [ $SECONDS -ge $end ]; then
+              echo "Timeout waiting for SSH"
+              exit 1
+            fi
+            echo "Waiting for SSH..."
+            sleep 5
+          done
 
       - name: Generate dynamic inventory
         run: |
