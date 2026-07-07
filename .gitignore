@@ -1,6 +1,9 @@
 # Local .terraform directories
 .terraform/
 
+# add local pass file:
+jenkins_default_password.txt
+
 # add lock file
 .terraform.lock.hcl
 
