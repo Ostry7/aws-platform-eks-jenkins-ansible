@@ -81,11 +81,3 @@
       }
      user: admin
      password: "{{ adminpwd.stdout }}"
-
-  - name: install plugin
-    jenkins_plugin:
-     name: "{{ item }}"
-     state: latest
-     url_username: admin
-     url_password: "{{ adminpwd.stdout }}"
-    with_items: "{{ jenkins_plugins }}"
