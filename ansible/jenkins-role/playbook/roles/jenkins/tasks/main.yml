@@ -81,3 +81,7 @@
       }
      user: admin
      password: "{{ adminpwd.stdout }}"
+  
+  - name: Install Jenkins plugins
+    community.general.jenkins_plugin:
+      name: blueocean
