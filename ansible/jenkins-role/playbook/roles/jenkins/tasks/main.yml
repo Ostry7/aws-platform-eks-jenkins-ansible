@@ -1,37 +1,43 @@
 # Install Jenkins
 ---
-  - name: yum update
-    yum:
-      name: '*'
-      state: latest
-      use_backend: "dnf5"
+  - name: apt update
+    apt:
+      update_cache: true
+
+  - name: Upgrade all packages
+    apt:
+      upgrade: dist
+
+  - name: Install prerequisites
+    apt:
+      name:
+        - fontconfig
+        - openjdk-21-jre
+        - curl
+        - gnupg
+      state: present
 
   - name: add the jenkins repo
     get_url:
-      url: https://pkg.jenkins.io/rpm-stable/jenkins.repo
-      dest: /etc/yum.repos.d/jenkins.repo 
+      url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+      dest: /usr/share/keyrings/jenkins-keyring.asc
 
-  - name: import a key file from jenkins-ci
-    ansible.builtin.rpm_key:
+  - name: Add Jenkins apt repository
+    ansible.builtin.apt_repository:
+      repo: "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/"
       state: present
-      key: https://pkg.jenkins.io/rpm-stable/jenkins.io-2026.key
+      filename: jenkins
 
-  - name: yum update
-    yum:
-      name: '*'
-      state: latest
+  - name: Update apt cache after adding repo
+    apt:
+      update_cache: true
 
-  - name: install java
-    shell: |
-      sudo yum install java-21-amazon-corretto -y
-
-  - name: install jenkins
-    yum:
+  - name: Install Jenkins
+    apt:
       name: jenkins
-      state: latest
+      state: present
 
-  - name: start jenkins
+  - name: Start and enable Jenkins
     ansible.builtin.systemd:
-      enabled: true
       name: jenkins
       state: started
