@@ -64,5 +64,7 @@ jobs:
         working-directory: ansible
 
       - name: Run Ansible playbook
-        run: ansible-playbook -i jenkins-role/inventory/dev/hosts.yaml jenkins-role/playbook/site.yml
+        run: |
+          ansible-playbook -i jenkins-role/inventory/dev/hosts.yaml jenkins-role/playbook/site.yml \
+          --extra-vars "admin_user_pass=${{ secrets.JENKINS_DEFAULT_PASSWORD }} jenkins_plugins=['git','workflow-aggregator','credentials-binding']"
         working-directory: ansible
