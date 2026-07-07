@@ -17,6 +17,11 @@
         - gnupg
       state: present
 
+  - name: Remove stale Jenkins keyring if exists   #only applied for reruns in coding phase
+    ansible.builtin.file:
+      path: /usr/share/keyrings/jenkins-keyring.asc
+      state: absent
+
   - name: add the jenkins key
     get_url:
       url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
