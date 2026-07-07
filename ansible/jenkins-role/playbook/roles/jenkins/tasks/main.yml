@@ -4,6 +4,7 @@
     yum:
       name: '*'
       state: latest
+      use_backend: yum
 
   - name: add the jenkins repo
     get_url:
