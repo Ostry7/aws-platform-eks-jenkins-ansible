@@ -85,3 +85,6 @@
   - name: Install Jenkins plugins
     community.general.jenkins_plugin:
       name: blueocean
+      url_username: jenkins
+      url_password: "{{ admin_user_pass }}"
+      state: present
