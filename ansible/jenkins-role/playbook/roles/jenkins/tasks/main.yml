@@ -17,10 +17,15 @@
         - gnupg
       state: present
 
-  - name: add the jenkins repo
+  - name: add the jenkins key
     get_url:
       url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
-      dest: /usr/share/keyrings/jenkins-keyring.asc
+      dest: /tmp/jenkins.io.key
+
+  - name: Dearmor Jenkins GPG key   #due to GPG key is starting "-----BEGIN PGP PUBLIC KEY BLOCK-----
+    ansible.builtin.shell: gpg --dearmor -o /usr/share/keyrings/jenkins-keyring.asc /tmp/jenkins.io.key
+    args:
+      creates: /usr/share/keyrings/jenkins-keyring.asc
 
   - name: Add Jenkins apt repository
     ansible.builtin.apt_repository:
