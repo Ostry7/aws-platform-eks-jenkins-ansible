@@ -125,7 +125,7 @@ resource "aws_eip" "jenkins_eip" {
 
 resource "aws_instance" "jenkinshost" {
   ami           = data.aws_ami.ubuntu.id
-  instance_type = "t3.micro"
+  instance_type = "t3.small"
   key_name      = aws_key_pair.jenkins_key.key_name
 
   primary_network_interface {
