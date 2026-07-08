@@ -79,8 +79,19 @@
       if (!jenkins.installState.isSetupComplete()) {
         InstallState.INITIAL_SETUP_COMPLETED.initializeState()
       }
-     user: admin
+     user: jenkins
      password: "{{ adminpwd.stdout }}"
+
+  - name: Wait for Jenkins to be fully ready after setup
+    uri:
+      url: "http://localhost:8080/login"
+      status_code: 200
+      timeout: 10
+    register: jenkins_ready
+    until: jenkins_ready.status == 200
+    retries: 15
+    delay: 10
+
   
   - name: Install Jenkins plugins
     community.general.jenkins_plugin:
