@@ -15,17 +15,17 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
 
       - run: terraform init
-        working-directory: terraform
+        working-directory: terraform-jenkikns
 
       - run: terraform apply -auto-approve -lock-timeout=60s
-        working-directory: terraform
+        working-directory: terraform-jenkikns
         env:
           TF_VAR_public_key: ${{ secrets.AWS_PUBLIC_KEY }}
 
       - name: Get instance IP from Terraform output
         id: tf_output
         run: echo "ip=$(terraform output -raw jenkins_public_ip)" >> "$GITHUB_OUTPUT"
-        working-directory: terraform
+        working-directory: terraform-jenkikns
 
       - name: Install Ansible
         run: |
