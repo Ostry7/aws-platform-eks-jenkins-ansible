@@ -80,7 +80,7 @@
         InstallState.INITIAL_SETUP_COMPLETED.initializeState()
       }
      user: jenkins
-     password: "{{ adminpwd.stdout }}"
+     password: "{{ admin_user_pass }}"
 
   - name: Wait for Jenkins to be fully ready after setup
     uri:
