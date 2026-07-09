@@ -1,0 +1,22 @@
+---
+  - name: Install unzip (needed for terraform binary)
+    apt:
+      name: unzip
+      state: present
+
+  - name: Download Terraform
+    get_url:
+      url: https://releases.hashicorp.com/terraform/1.9.8/terraform_1.9.8_linux_amd64.zip
+      dest: /tmp/terraform.zip
+
+  - name: Unzip Terraform
+    unarchive:
+      src: /tmp/terraform.zip
+      dest: /usr/local/bin
+      remote_src: true
+      mode: '0755'
+
+  - name: Install AWS CLI
+    apt:
+      name: awscli
+      state: present
