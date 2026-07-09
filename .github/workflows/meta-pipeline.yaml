@@ -30,11 +30,6 @@ jobs:
           echo "agent_infra_ip=$(terraform output -raw jenkins_agent_infra_private_ip)" >> "$GITHUB_OUTPUT"
         working-directory: terraform-jenkins
 
-      - name: Install Ansible
-        run: |
-          sudo apt update
-          sudo apt install -y ansible
-
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
@@ -55,6 +50,15 @@ jobs:
             sleep 5
           done
 
+      - name: Copy SSH key to master for ProxyJump
+        run: |
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            ~/.ssh/id_rsa \
+            ubuntu@${{ steps.tf_output.outputs.master_ip }}:~/.ssh/id_rsa
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            ubuntu@${{ steps.tf_output.outputs.master_ip }} \
+            "chmod 600 ~/.ssh/id_rsa"
+
       - name: Generate dynamic inventory
         run: |
           cat <<EOF > jenkins-role/inventory/hosts.yaml
@@ -69,14 +73,21 @@ jobs:
               ${{ steps.tf_output.outputs.agent_build_ip }}:
                 ansible_user: ubuntu
                 ansible_ssh_private_key_file: ~/.ssh/id_rsa
+                ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o ProxyJump=ubuntu@${{ steps.tf_output.outputs.master_ip }}'
 
           jenkins_agent_infra:
             hosts:
               ${{ steps.tf_output.outputs.agent_infra_ip }}:
                 ansible_user: ubuntu
                 ansible_ssh_private_key_file: ~/.ssh/id_rsa
+                ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o ProxyJump=ubuntu@${{ steps.tf_output.outputs.master_ip }}'
           EOF
         working-directory: ansible
+
+      - name: Install Ansible
+        run: |
+          sudo apt update
+          sudo apt install -y ansible
 
       - name: Run Ansible playbook
         run: |
