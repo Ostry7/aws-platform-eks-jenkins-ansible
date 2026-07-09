@@ -24,7 +24,10 @@ jobs:
 
       - name: Get instance IP from Terraform output
         id: tf_output
-        run: echo "ip=$(terraform output -raw jenkins_public_ip)" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "master_ip=$(terraform output -raw jenkins_master_public_ip)" >> "$GITHUB_OUTPUT"
+          echo "agent_build_ip=$(terraform output -raw jenkins_agent_build_private_ip)" >> "$GITHUB_OUTPUT"
+          echo "agent_infra_ip=$(terraform output -raw jenkins_agent_infra_private_ip)" >> "$GITHUB_OUTPUT"
         working-directory: terraform-jenkins
 
       - name: Install Ansible
@@ -37,11 +40,11 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_KEY_B64 }}" | base64 -d > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ steps.tf_output.outputs.ip }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ steps.tf_output.outputs.master_ip }} >> ~/.ssh/known_hosts
 
       - name: Wait for SSH to be ready
         run: |
-          IP="${{ steps.tf_output.outputs.ip }}"
+          IP="${{ steps.tf_output.outputs.master_ip }}"
           end=$((SECONDS+120))
           until ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o ConnectTimeout=5 ubuntu@$IP "echo ok"; do
             if [ $SECONDS -ge $end ]; then
@@ -54,10 +57,22 @@ jobs:
 
       - name: Generate dynamic inventory
         run: |
-          cat <<EOF > jenkins-role/inventory/dev/hosts.yaml
-          jenkins-master:
+          cat <<EOF > jenkins-role/inventory/hosts.yaml
+          jenkins_master:
             hosts:
-              ${{ steps.tf_output.outputs.ip }}:
+              ${{ steps.tf_output.outputs.master_ip }}:
+                ansible_user: ubuntu
+                ansible_ssh_private_key_file: ~/.ssh/id_rsa
+
+          jenkins_agent_build:
+            hosts:
+              ${{ steps.tf_output.outputs.agent_build_ip }}:
+                ansible_user: ubuntu
+                ansible_ssh_private_key_file: ~/.ssh/id_rsa
+
+          jenkins_agent_infra:
+            hosts:
+              ${{ steps.tf_output.outputs.agent_infra_ip }}:
                 ansible_user: ubuntu
                 ansible_ssh_private_key_file: ~/.ssh/id_rsa
           EOF
@@ -65,6 +80,6 @@ jobs:
 
       - name: Run Ansible playbook
         run: |
-          ansible-playbook -i jenkins-role/inventory/dev/hosts.yaml jenkins-role/playbook/site.yml \
+          ansible-playbook -i jenkins-role/inventory/hosts.yaml jenkins-role/playbook/site.yml \
           --extra-vars "admin_user_pass=${{ secrets.JENKINS_DEFAULT_PASSWORD }}"
         working-directory: ansible
