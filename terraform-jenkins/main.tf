@@ -144,13 +144,35 @@ output "jenkins_public_ip" {
   value = aws_eip.jenkins_eip.public_ip
 }
 
+resource "aws_security_group" "jenkins_agent_sg" {
+  name   = "jenkins-agent-sg"
+  vpc_id = aws_vpc.jenkins_vpc.id
+
+  ingress {
+    description     = "SSH from Jenkins master only"
+    from_port       = 22
+    to_port         = 22
+    protocol        = "tcp"
+    security_groups = [aws_security_group.jenkins_sg.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = { Name = "jenkins-agent-sg" }
+}
+
 # Provision Jenkins agents
 resource "aws_instance" "jenkins_agent_infra" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t3.small"
   key_name      = aws_key_pair.jenkins_key.key_name
   subnet_id = aws_subnet.jenkins_subnet.id
-  vpc_security_group_ids = [aws_security_group.jenkins_sg.id]
+  vpc_security_group_ids = [aws_security_group.jenkins_agent_sg.id]
   tags = {
     Name = "jenkins-agent_infra"
   }
@@ -161,7 +183,7 @@ resource "aws_instance" "jenkins_agent_build" {
   instance_type = "t3.small"
   key_name      = aws_key_pair.jenkins_key.key_name
   subnet_id = aws_subnet.jenkins_subnet.id
-  vpc_security_group_ids = [aws_security_group.jenkins_sg.id]
+  vpc_security_group_ids = [aws_security_group.jenkins_agnet_sg.id]
   tags = {
     Name = "jenkins-agent_build"
   }
