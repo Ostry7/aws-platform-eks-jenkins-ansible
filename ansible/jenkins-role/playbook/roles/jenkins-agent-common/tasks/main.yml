@@ -1,0 +1,33 @@
+---
+  - name: Install Java (required for Jenkins agent)
+    apt:
+      name: openjdk-21-jre
+      state: present
+      update_cache: true
+
+  - name: Create jenkins user
+    user:
+      name: jenkins
+      shell: /bin/bash
+      create_home: true
+
+  - name: Create .ssh directory
+    file:
+      path: /home/jenkins/.ssh
+      state: directory
+      owner: jenkins
+      group: jenkins
+      mode: '0700'
+
+  - name: Add Jenkins master's public key to authorized_keys
+    ansible.posix.authorized_key:
+      user: jenkins
+      key: "{{ jenkins_master_public_key }}"
+      state: present
+
+  - name: Create agent working directory
+    file:
+      path: /home/jenkins/agent
+      state: directory
+      owner: jenkins
+      group: jenkins
