@@ -1,0 +1,22 @@
+---
+  - name: Install Docker prerequisites
+    apt:
+      name:
+        - ca-certificates
+        - curl
+      state: present
+
+  - name: Install Docker
+    apt:
+      name: docker.io
+      state: present
+
+  - name: Add jenkins user to docker group
+    user:
+      name: jenkins
+      groups: docker
+      append: true
+
+  - name: Install python
+    apt: name="python3" state=present
+    become: true
