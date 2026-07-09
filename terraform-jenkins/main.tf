@@ -143,3 +143,26 @@ resource "aws_instance" "jenkinshost" {
 output "jenkins_public_ip" {
   value = aws_eip.jenkins_eip.public_ip
 }
+
+# Provision Jenkins agents
+resource "aws_instance" "jenkins_agent_infra" {
+  ami           = data.aws_ami.ubuntu.id
+  instance_type = "t3.small"
+  key_name      = aws_key_pair.jenkins_key.key_name
+  subnet_id = aws_subnet.jenkins_subnet.id
+  vpc_security_group_ids = [aws_security_group.jenkins_sg.id]
+  tags = {
+    Name = "jenkins-agent_infra"
+  }
+}
+
+resource "aws_instance" "jenkins_agent_build" {
+  ami           = data.aws_ami.ubuntu.id
+  instance_type = "t3.small"
+  key_name      = aws_key_pair.jenkins_key.key_name
+  subnet_id = aws_subnet.jenkins_subnet.id
+  vpc_security_group_ids = [aws_security_group.jenkins_sg.id]
+  tags = {
+    Name = "jenkins-agent_build"
+  }
+}
