@@ -1,0 +1,106 @@
+# Install Jenkins
+---
+  - name: apt update
+    apt:
+      update_cache: true
+
+  - name: Upgrade all packages
+    apt:
+      upgrade: dist
+
+  - name: Install prerequisites
+    apt:
+      name:
+        - fontconfig
+        - openjdk-21-jre
+        - curl
+        - gnupg
+      state: present
+
+  - name: Remove stale Jenkins keyring if exists   #only applied for reruns in coding phase
+    ansible.builtin.file:
+      path: /usr/share/keyrings/jenkins-keyring.asc
+      state: absent
+
+  - name: add the jenkins key
+    get_url:
+      url: https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key
+      dest: /usr/share/keyrings/jenkins-keyring.asc
+      force: true
+      mode: '0644'
+
+  - name: Add Jenkins apt repository
+    ansible.builtin.apt_repository:
+      repo: "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/"
+      state: present
+      filename: jenkins
+
+  - name: Update apt cache after adding repo
+    apt:
+      update_cache: true
+
+  - name: Install Jenkins
+    apt:
+      name: jenkins
+      state: present
+
+  - name: Start and enable Jenkins
+    ansible.builtin.systemd:
+      name: jenkins
+      state: started
+  
+  - name: read admin pwd
+    shell: cat /var/lib/jenkins/secrets/initialAdminPassword
+    register: adminpwd
+
+  - name: unlock and add admin user
+    jenkins_script:
+     script: |
+      import jenkins.model.*
+      import hudson.security.*
+      def instance = Jenkins.getInstance()
+      def hudsonRealm = new HudsonPrivateSecurityRealm(false)
+      hudsonRealm.createAccount('jenkins', '${user_pwd}')
+      instance.setSecurityRealm(hudsonRealm)
+      def strategy = new FullControlOnceLoggedInAuthorizationStrategy()
+      strategy.setAllowAnonymousRead(false)
+      instance.setAuthorizationStrategy(strategy)
+      instance.save()
+     args:
+      user_pwd: "{{ admin_user_pass }}"
+     user: admin
+     password: "{{ adminpwd.stdout }}"
+
+  - name: complete setup wizard
+    jenkins_script:
+     script: |
+      import static jenkins.model.Jenkins.instance as jenkins
+      import jenkins.install.InstallState
+      if (!jenkins.installState.isSetupComplete()) {
+        InstallState.INITIAL_SETUP_COMPLETED.initializeState()
+      }
+     user: jenkins
+     password: "{{ admin_user_pass }}"
+
+  - name: Wait for Jenkins to be fully ready after setup
+    uri:
+      url: "http://localhost:8080/login"
+      status_code: 200
+      timeout: 10
+    register: jenkins_ready
+    until: jenkins_ready.status == 200
+    retries: 15
+    delay: 10
+
+  
+  - name: Install Jenkins plugins
+    community.general.jenkins_plugin:
+      name: "{{ item }}"
+      url_username: jenkins
+      url_password: "{{ admin_user_pass }}"
+      state: present
+    loop:
+      - blueocean
+      - github
+      - credentials
+      - credentials-binding
