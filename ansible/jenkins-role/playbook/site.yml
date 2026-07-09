@@ -1,7 +1,26 @@
 ---
-- name: Install Jenkins
-  hosts: jenkins-master
+- name: Install Jenkins master
+  hosts: jenkins_master
   become: true
-
   roles:
-    - jenkins
+    - jenkins-master
+
+- name: Configure Jenkins agents (common)
+  hosts:
+    - jenkins_agent_build
+    - jenkins_agent_infra
+  become: true
+  roles:
+    - jenkins-agent-common
+
+- name: Configure Jenkins agent build
+  hosts: jenkins_agent_build
+  become: true
+  roles:
+    - jenkins-agent-build
+
+- name: Configure Jenkins agent infra
+  hosts: jenkins_agent_infra
+  become: true
+  roles:
+    - jenkins-agent-infra
