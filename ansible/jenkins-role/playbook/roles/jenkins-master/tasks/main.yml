@@ -104,3 +104,29 @@
       - github
       - credentials
       - credentials-binding
+
+  - name: Ensure jenkins user has .ssh directory
+    file:
+      path: /var/lib/jenkins/.ssh
+      state: directory
+      owner: jenkins
+      group: jenkins
+      mode: '0700'
+
+  - name: Generate SSH key pair for Jenkins master (if not exists)
+    community.crypto.openssh_keypair:
+      path: /var/lib/jenkins/.ssh/id_rsa
+      type: rsa
+      size: 4096
+      owner: jenkins
+      group: jenkins
+      mode: '0600'
+
+  - name: Read master's public key
+    slurp:
+      src: /var/lib/jenkins/.ssh/id_rsa.pub
+    register: jenkins_pub_key_file
+
+  - name: Share public key with other hosts in this playbook run
+    set_fact:
+      jenkins_master_public_key: "{{ jenkins_pub_key_file.content | b64decode }}"
