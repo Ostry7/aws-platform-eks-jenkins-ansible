@@ -19,12 +19,6 @@
       group: jenkins
       mode: '0700'
 
-  - name: Add Jenkins master's public key to authorized_keys
-    ansible.posix.authorized_key:
-      user: jenkins
-      key: "{{ jenkins_master_public_key }}"
-      state: present
-
   - name: Create agent working directory
     file:
       path: /home/jenkins/agent
