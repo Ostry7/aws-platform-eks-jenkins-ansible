@@ -106,6 +106,36 @@
       - credentials-binding
       - ssh-slaves
 
+  - name: Install Jenkins plugins
+    community.general.jenkins_plugin:
+      name: "{{ item }}"
+      url_username: jenkins
+      url_password: "{{ admin_user_pass }}"
+      state: present
+    loop:
+      - blueocean
+      - github
+      - credentials
+      - credentials-binding
+      - ssh-slaves
+    register: plugin_result
+
+  - name: Restart Jenkins if plugins changed
+    ansible.builtin.systemd:
+      name: jenkins
+      state: restarted
+    when: plugin_result.changed
+
+  - name: Wait for Jenkins to come back up after restart
+    uri:
+      url: "http://localhost:8080/login"
+      status_code: 200
+    register: jenkins_restart_check
+    until: jenkins_restart_check.status == 200
+    retries: 30
+    delay: 5
+    when: plugin_result.changed
+
   - name: Ensure jenkins user has .ssh directory
     file:
       path: /var/lib/jenkins/.ssh
