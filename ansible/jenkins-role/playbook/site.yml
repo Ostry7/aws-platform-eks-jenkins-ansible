@@ -35,15 +35,15 @@
         script: |
           import com.cloudbees.plugins.credentials.*
           import com.cloudbees.plugins.credentials.impl.*
-          import com.cloudbees.jenkins.plugins.sshcredentials.impl.*
           import com.cloudbees.plugins.credentials.domains.*
+          import com.cloudbees.jenkins.plugins.sshcredentials.impl.*
           import jenkins.model.*
-
+          
           def domain = Domain.global()
           def store = Jenkins.instance.getExtensionList(
             'com.cloudbees.plugins.credentials.SystemCredentialsProvider'
           )[0].getStore()
-
+          
           def exists = store.getCredentials(domain).any { it.id == 'jenkins-agent-ssh-key' }
           if (!exists) {
             def privateKey = new BasicSSHUserPrivateKey.DirectEntryPrivateKeySource(
