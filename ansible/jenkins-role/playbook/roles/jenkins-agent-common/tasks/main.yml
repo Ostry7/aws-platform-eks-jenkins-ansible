@@ -31,3 +31,9 @@
       state: directory
       owner: jenkins
       group: jenkins
+
+  - name: Add Jenkins master's public key to authorized_keys
+    ansible.posix.authorized_key:
+      user: jenkins
+      key: "{{ hostvars[groups['jenkins_master'][0]].jenkins_master_public_key }}"
+      state: present
