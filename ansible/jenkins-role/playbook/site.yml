@@ -24,3 +24,92 @@
   become: true
   roles:
     - jenkins-agent-infra
+
+# Register agents:
+
+- hosts: jenkins_master
+  become: true
+  tasks:
+    - name: Add SSH credential for agents in Jenkins
+      community.general.jenkins_script:
+        script: |
+          import com.cloudbees.plugins.credentials.*
+          import com.cloudbees.plugins.credentials.impl.*
+          import com.cloudbees.jenkins.plugins.sshcredentials.impl.*
+          import com.cloudbees.plugins.credentials.domains.*
+          import jenkins.model.*
+
+          def domain = Domain.global()
+          def store = Jenkins.instance.getExtensionList(
+            'com.cloudbees.plugins.credentials.SystemCredentialsProvider'
+          )[0].getStore()
+
+          def exists = store.getCredentials(domain).any { it.id == 'jenkins-agent-ssh-key' }
+          if (!exists) {
+            def privateKey = new BasicSSHUserPrivateKey.DirectEntryPrivateKeySource(
+              new File('/var/lib/jenkins/.ssh/id_rsa').text
+            )
+            def cred = new BasicSSHUserPrivateKey(
+              CredentialsScope.GLOBAL,
+              'jenkins-agent-ssh-key',
+              'jenkins',
+              privateKey,
+              '',
+              'SSH key for Jenkins agents'
+            )
+            store.addCredentials(domain, cred)
+          }
+        user: jenkins
+        password: "{{ admin_user_pass }}"
+
+    - name: Add build agent node
+      community.general.jenkins_script:
+        script: |
+          import hudson.model.*
+          import hudson.slaves.*
+          import hudson.plugins.sshslaves.*
+          import com.cloudbees.jenkins.plugins.sshslaves.verification.*
+
+          if (Jenkins.instance.getNode('build-agent') == null) {
+            def launcher = new SSHLauncher(
+              '{{ hostvars[groups["jenkins_agent_build"][0]].inventory_hostname }}',
+              22,
+              'jenkins-agent-ssh-key',
+              '', null, '', '',
+              60, 3, 15,
+              new NonVerifyingKeyVerificationStrategy()
+            )
+            def agent = new DumbSlave('build-agent', '/home/jenkins/agent', launcher)
+            agent.setNumExecutors(2)
+            agent.setLabelString('build')
+            agent.setMode(Node.Mode.NORMAL)
+            Jenkins.instance.addNode(agent)
+          }
+        user: jenkins
+        password: "{{ admin_user_pass }}"
+
+    - name: Add infra/terraform agent node
+      community.general.jenkins_script:
+        script: |
+          import hudson.model.*
+          import hudson.slaves.*
+          import hudson.plugins.sshslaves.*
+          import com.cloudbees.jenkins.plugins.sshslaves.verification.*
+
+          if (Jenkins.instance.getNode('infra-agent') == null) {
+            def launcher = new SSHLauncher(
+              '{{ hostvars[groups["jenkins_agent_infra"][0]].inventory_hostname }}',
+              22,
+              'jenkins-agent-ssh-key',
+              '', null, '', '',
+              60, 3, 15,
+              new NonVerifyingKeyVerificationStrategy()
+            )
+            def agent = new DumbSlave('infra-agent', '/home/jenkins/agent', launcher)
+            agent.setNumExecutors(1)
+            agent.setLabelString('terraform')
+            agent.setMode(Node.Mode.NORMAL)
+            Jenkins.instance.addNode(agent)
+          }
+        user: jenkins
+        password: "{{ admin_user_pass }}"
