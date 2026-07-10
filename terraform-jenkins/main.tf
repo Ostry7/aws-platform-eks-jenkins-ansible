@@ -168,11 +168,12 @@ resource "aws_security_group" "jenkins_agent_sg" {
 
 # Provision Jenkins agents
 resource "aws_instance" "jenkins_agent_infra" {
-  ami           = data.aws_ami.ubuntu.id
-  instance_type = "t3.small"
-  key_name      = aws_key_pair.jenkins_key.key_name
-  subnet_id = aws_subnet.jenkins_subnet.id
-  vpc_security_group_ids = [aws_security_group.jenkins_agent_sg.id]
+  ami                         = data.aws_ami.ubuntu.id
+  instance_type               = "t3.small"
+  key_name                    = aws_key_pair.jenkins_key.key_name
+  subnet_id                   = aws_subnet.jenkins_subnet.id
+  vpc_security_group_ids      = [aws_security_group.jenkins_agent_sg.id]
+  associate_public_ip_address = true
   tags = {
     Name = "jenkins-agent_infra"
   }
@@ -184,11 +185,12 @@ output "jenkins_agent_infra_private_ip" {
 }
 
 resource "aws_instance" "jenkins_agent_build" {
-  ami           = data.aws_ami.ubuntu.id
-  instance_type = "t3.small"
-  key_name      = aws_key_pair.jenkins_key.key_name
-  subnet_id = aws_subnet.jenkins_subnet.id
-  vpc_security_group_ids = [aws_security_group.jenkins_agent_sg.id]
+  ami                         = data.aws_ami.ubuntu.id
+  instance_type               = "t3.small"
+  key_name                    = aws_key_pair.jenkins_key.key_name
+  subnet_id                   = aws_subnet.jenkins_subnet.id
+  vpc_security_group_ids      = [aws_security_group.jenkins_agent_sg.id]
+  associate_public_ip_address = true
   tags = {
     Name = "jenkins-agent_build"
   }
