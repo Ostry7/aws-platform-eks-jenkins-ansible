@@ -104,6 +104,7 @@
       - github
       - credentials
       - credentials-binding
+      - ssh-slaves
 
   - name: Ensure jenkins user has .ssh directory
     file:
