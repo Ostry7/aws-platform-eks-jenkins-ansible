@@ -92,23 +92,34 @@
     retries: 15
     delay: 10
 
-  
-  - name: Install Jenkins plugins
-    community.general.jenkins_plugin:
-      name: "{{ item }}"
-      url_username: jenkins
-      url_password: "{{ admin_user_pass }}"
-      state: present
-      retries: 3
-      delay: 2
-    loop:
-      - blueocean
-      - github
-      - credentials
-      - credentials-binding
-      - ssh-slaves
+#  - name: Install Jenkins plugins
+#    community.general.jenkins_plugin:
+#      name: "{{ item }}"
+#      url_username: jenkins
+#      url_password: "{{ admin_user_pass }}"
+#      state: present
+#    loop:
+#      - blueocean
+#      - github
+#      - credentials
+#      - credentials-binding
+#      - ssh-slaves
+#    register: plugin_result
 
-  - name: Install Jenkins plugins
+  - name: Get list of installed plugins
+    uri:
+      url: "http://localhost:8080/pluginManager/api/json?depth=1"
+      user: jenkins
+      password: "{{ admin_user_pass }}"
+      force_basic_auth: true
+      return_content: true
+    register: installed_plugins_raw
+
+  - name: Parse installed plugin short names
+    set_fact:
+      installed_plugin_names: "{{ (installed_plugins_raw.content | from_json).plugins | map(attribute='shortName') | list }}"
+
+  - name: Install missing Jenkins plugins only
     community.general.jenkins_plugin:
       name: "{{ item }}"
       url_username: jenkins
@@ -120,6 +131,7 @@
       - credentials
       - credentials-binding
       - ssh-slaves
+    when: item not in installed_plugin_names
     register: plugin_result
 
   - name: Restart Jenkins if plugins changed
