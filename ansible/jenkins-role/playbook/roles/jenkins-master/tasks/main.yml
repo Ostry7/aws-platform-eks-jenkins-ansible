@@ -99,6 +99,8 @@
       url_username: jenkins
       url_password: "{{ admin_user_pass }}"
       state: present
+      retries: 10
+      delay: 2
     loop:
       - blueocean
       - github
