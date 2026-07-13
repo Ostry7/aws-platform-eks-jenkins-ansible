@@ -68,7 +68,7 @@
           import hudson.model.*
           import hudson.slaves.*
           import hudson.plugins.sshslaves.*
-          import hudson.plugins.sshslaves.verifiers.*
+          import com.cloudbees.jenkins.plugins.sshslaves.verification.*
 
           if (Jenkins.instance.getNode('build-agent') == null) {
             def launcher = new SSHLauncher(
