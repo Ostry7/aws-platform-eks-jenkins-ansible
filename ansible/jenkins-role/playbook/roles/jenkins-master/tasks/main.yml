@@ -175,3 +175,21 @@
   - name: Share public key with other hosts in this playbook run
     set_fact:
       jenkins_master_public_key: "{{ jenkins_pub_key_file.content | b64decode }}"
+
+  - name: Create build multibranch pipeline job from XML
+    community.general.jenkins_job:
+      name: build-pipeline
+      url: "http://localhost:8080"
+      user: jenkins
+      password: "{{ admin_user_pass }}"
+      config: "{{ lookup('file', playbook_dir + '/../../Jenkins/build/init-job.xml') }}"
+      state: present
+
+  - name: Create infra multibranch pipeline job from XML
+    community.general.jenkins_job:
+      name: infra-pipeline
+      url: "http://localhost:8080"
+      user: jenkins
+      password: "{{ admin_user_pass }}"
+      config: "{{ lookup('file', playbook_dir + '/../../Jenkins/infra/init-job.xml') }}"
+      state: present
