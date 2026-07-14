@@ -1,5 +1,5 @@
 pipeline {
-    agent any // Specifies where the pipeline runs (e.g., any available node)
+    agent { label 'build' }
 
     stages {
         stage('Build') {
