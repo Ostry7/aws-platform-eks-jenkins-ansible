@@ -182,7 +182,7 @@
       url: "http://localhost:8080"
       user: jenkins
       password: "{{ admin_user_pass }}"
-      config: "{{ lookup('file', playbook_dir + '/../../Jenkins/build/init-job.xml') }}"
+      config: "{{ lookup('file', playbook_dir + '/../../../Jenkins/build/init-job.xml') }}"
       state: present
 
   - name: Create infra multibranch pipeline job from XML
@@ -191,5 +191,5 @@
       url: "http://localhost:8080"
       user: jenkins
       password: "{{ admin_user_pass }}"
-      config: "{{ lookup('file', playbook_dir + '/../../Jenkins/infra/init-job.xml') }}"
+      config: "{{ lookup('file', playbook_dir + '/../../../Jenkins/infra/init-job.xml') }}"
       state: present
