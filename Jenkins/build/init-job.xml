@@ -1,56 +1,55 @@
-This XML file does not appear to have any style information associated with it. The document tree is shown below.
-<flow-definition plugin="workflow-job@1581.ve4b_d0db_fcb_b_b_">
-<actions/>
-<keepDependencies>false</keepDependencies>
-<properties>
-<org.jenkinsci.plugins.workflow.multibranch.BranchJobProperty plugin="workflow-multibranch@821.vc3b_4ea_780798">
-<branch plugin="branch-api@2.1280.v0d4e5b_b_460ef">
-<sourceId>1</sourceId>
-<head class="org.jenkinsci.plugins.github_branch_source.BranchSCMHead" plugin="github-branch-source@1967.1970.vd86979736546">
-<name>main-build-pipeline</name>
-</head>
-<scm class="hudson.plugins.git.GitSCM" plugin="git@5.10.1">
-<configVersion>2</configVersion>
-<userRemoteConfigs>
-<hudson.plugins.git.UserRemoteConfig>
-<name>origin</name>
-<refspec>+refs/heads/main:refs/remotes/origin/main</refspec>
-<url>https://github.com/Ostry7/aws-platform-eks-jenkins-ansible.git</url>
-</hudson.plugins.git.UserRemoteConfig>
-</userRemoteConfigs>
-<branches class="singleton-list">
-<hudson.plugins.git.BranchSpec>
-<name>main-build-pipeline</name>
-</hudson.plugins.git.BranchSpec>
-</branches>
-<doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
-<browser class="hudson.plugins.git.browser.GithubWeb">
-<url>https://github.com/Ostry7/aws-platform-eks-jenkins-ansible</url>
-</browser>
-<submoduleCfg class="empty-list"/>
-<extensions>
-<jenkins.plugins.git.GitSCMSourceDefaults>
-<includeTags>false</includeTags>
-</jenkins.plugins.git.GitSCMSourceDefaults>
-</extensions>
-</scm>
-<properties/>
-<actions>
-<org.jenkinsci.plugins.github__branch__source.GitHubLink plugin="github-branch-source@1967.1970.vd86979736546">
-<url>https://github.com/Ostry7/aws-platform-eks-jenkins-ansible/tree/main</url>
-</org.jenkinsci.plugins.github__branch__source.GitHubLink>
-<jenkins.scm.api.metadata.ObjectMetadataAction plugin="scm-api@728.vc30dcf7a_0df5">
-<objectDisplayName>main</objectDisplayName>
-<objectUrl>https://github.com/Ostry7/aws-platform-eks-jenkins-ansible/tree/main</objectUrl>
-</jenkins.scm.api.metadata.ObjectMetadataAction>
-<jenkins.scm.api.metadata.PrimaryInstanceMetadataAction plugin="scm-api@728.vc30dcf7a_0df5"/>
-</actions>
-</branch>
-</org.jenkinsci.plugins.workflow.multibranch.BranchJobProperty>
-</properties>
-<definition class="org.jenkinsci.plugins.workflow.multibranch.SCMBinder" plugin="workflow-multibranch@821.vc3b_4ea_780798">
-<scriptPath>Jenkins/build/Jenkinsfile</scriptPath>
-</definition>
-<triggers/>
-<disabled>false</disabled>
-</flow-definition>
+<?xml version="1.1" encoding="UTF-8"?>
+<org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject plugin="workflow-multibranch@821.vc3b_4ea_780798">
+  <actions/>
+  <description></description>
+  <displayName>main-build-pipeline</displayName>
+  <properties/>
+  <folderViews class="jenkins.branch.MultiBranchProjectViewHolder" plugin="branch-api@2.1280.v0d4e5b_b_460ef">
+    <owner class="org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject" reference="../.."/>
+  </folderViews>
+  <healthMetrics/>
+  <icon class="jenkins.branch.MetadataActionFolderIcon" plugin="branch-api@2.1280.v0d4e5b_b_460ef">
+    <owner class="org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject" reference="../.."/>
+  </icon>
+  <orphanedItemStrategy class="com.cloudbees.hudson.plugins.folder.computed.DefaultOrphanedItemStrategy" plugin="cloudbees-folder@6.1100.ve9eed61d16c4">
+    <pruneDeadBranches>true</pruneDeadBranches>
+    <daysToKeep>-1</daysToKeep>
+    <numToKeep>-1</numToKeep>
+    <abortBuilds>false</abortBuilds>
+  </orphanedItemStrategy>
+  <triggers/>
+  <disabled>false</disabled>
+  <sources class="jenkins.branch.MultiBranchProject$BranchSourceList" plugin="branch-api@2.1280.v0d4e5b_b_460ef">
+    <data>
+      <jenkins.branch.BranchSource>
+        <source class="org.jenkinsci.plugins.github_branch_source.GitHubSCMSource" plugin="github-branch-source@1967.1970.vd86979736546">
+          <id>1</id>
+          <apiUri>https://api.github.com</apiUri>
+          <repoOwner>Ostry7</repoOwner>
+          <repository>aws-platform-eks-jenkins-ansible</repository>
+          <repositoryUrl>https://github.com/Ostry7/aws-platform-eks-jenkins-ansible</repositoryUrl>
+          <traits>
+            <org.jenkinsci.plugins.github__branch__source.BranchDiscoveryTrait>
+              <strategyId>1</strategyId>
+            </org.jenkinsci.plugins.github__branch__source.BranchDiscoveryTrait>
+            <org.jenkinsci.plugins.github__branch__source.OriginPullRequestDiscoveryTrait>
+              <strategyId>2</strategyId>
+            </org.jenkinsci.plugins.github__branch__source.OriginPullRequestDiscoveryTrait>
+            <org.jenkinsci.plugins.github__branch__source.ForkPullRequestDiscoveryTrait>
+              <strategyId>2</strategyId>
+              <trust class="org.jenkinsci.plugins.github_branch_source.ForkPullRequestDiscoveryTrait$TrustPermission"/>
+            </org.jenkinsci.plugins.github__branch__source.ForkPullRequestDiscoveryTrait>
+          </traits>
+        </source>
+        <strategy class="jenkins.branch.DefaultBranchPropertyStrategy">
+          <properties class="empty-list"/>
+        </strategy>
+      </jenkins.branch.BranchSource>
+    </data>
+    <owner class="org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject" reference="../.."/>
+  </sources>
+  <factory class="org.jenkinsci.plugins.workflow.multibranch.WorkflowBranchProjectFactory">
+    <owner class="org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject" reference="../.."/>
+    <scriptPath>Jenkins/build/Jenkinsfile</scriptPath>
+  </factory>
+</org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject>
