@@ -2,9 +2,15 @@ pipeline {
     agent { label 'infra' }
 
     stages {
-        stage('Build') {
+        stage('Checkout Git repo') {
             steps {
-                echo '[INFRA STAGE] Building the application...'
+                checkout scmGit(
+                    branches: [[name: '*']],
+                    extensions: [],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/Ostry7/aws-platform-eks-jenkins-ansible'
+                    ]]
+)
             }
         }
 
