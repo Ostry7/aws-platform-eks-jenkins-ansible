@@ -167,6 +167,31 @@
       group: jenkins
       mode: '0600'
 
+  - name: Add GitHub PAT credential for API rate limit
+    community.general.jenkins_script:
+      script: |
+        import com.cloudbees.plugins.credentials.*
+        import com.cloudbees.plugins.credentials.impl.*
+        import com.cloudbees.plugins.credentials.domains.*
+        import jenkins.model.*
+        def domain = Domain.global()
+        def store = Jenkins.instance.getExtensionList(
+          'com.cloudbees.plugins.credentials.SystemCredentialsProvider'
+        )[0].getStore()
+        def exists = store.getCredentials(domain).any { it.id == 'github-pat' }
+        if (!exists) {
+          def cred = new UsernamePasswordCredentialsImpl(
+            CredentialsScope.GLOBAL,
+            'github-pat',
+            'GitHub PAT for API rate limit',
+            'Ostry7',
+            '{{ github_pat_token }}'
+          )
+          store.addCredentials(domain, cred)
+        }
+      user: jenkins
+      password: "{{ admin_user_pass }}"
+
   - name: Read master's public key
     slurp:
       src: /var/lib/jenkins/.ssh/id_rsa.pub
