@@ -93,4 +93,5 @@ jobs:
         run: |
           ansible-playbook -i jenkins-role/inventory/hosts.yaml jenkins-role/playbook/site.yml \
           --extra-vars "admin_user_pass=${{ secrets.JENKINS_DEFAULT_PASSWORD }}"
+          --extra-vars "github_pat_token=${{ secrets.GITHUB_PAT }}"
         working-directory: ansible
