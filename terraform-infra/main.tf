@@ -1,3 +1,41 @@
+# create vpc for K8s cluster
+resource "aws_vpc" "k8s_vpc" {
+  cidr_block       = "10.0.0.0/16"
+  instance_tenancy = "default"
+  enable_dns_hostnames  =   true
+
+  tags = {
+    Name = "eks-vpc"
+  }
+}
+
+resource "aws_subnet" "az1" {
+  vpc_id     = aws_vpc.k8s_vpc.id
+  cidr_block = "10.0.1.0/24"
+
+  tags = {
+    Name = "az1_subnet"
+  }
+}
+
+resource "aws_subnet" "az2" {
+  vpc_id     = aws_vpc.k8s_vpc.id
+  cidr_block = "10.0.2.0/24"
+
+  tags = {
+    Name = "az2_subnet"
+  }
+}
+
+resource "aws_subnet" "az3" {
+  vpc_id     = aws_vpc.k8s_vpc.id
+  cidr_block = "10.0.3.0/24"
+
+  tags = {
+    Name = "az3_subnet"
+  }
+}
+
 resource "aws_eks_cluster" "K8s_cluster" {
   name = "K8s_cluster"
 
