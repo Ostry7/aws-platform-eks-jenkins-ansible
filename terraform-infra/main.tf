@@ -9,9 +9,14 @@ resource "aws_vpc" "k8s_vpc" {
   }
 }
 
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
 resource "aws_subnet" "az1" {
   vpc_id     = aws_vpc.k8s_vpc.id
   cidr_block = "10.0.1.0/24"
+  availability_zone = data.aws_availability_zones.available.names[0]
 
   tags = {
     Name = "az1_subnet"
@@ -21,6 +26,7 @@ resource "aws_subnet" "az1" {
 resource "aws_subnet" "az2" {
   vpc_id     = aws_vpc.k8s_vpc.id
   cidr_block = "10.0.2.0/24"
+  availability_zone = data.aws_availability_zones.available.names[1]
 
   tags = {
     Name = "az2_subnet"
@@ -30,6 +36,7 @@ resource "aws_subnet" "az2" {
 resource "aws_subnet" "az3" {
   vpc_id     = aws_vpc.k8s_vpc.id
   cidr_block = "10.0.3.0/24"
+  availability_zone = data.aws_availability_zones.available.names[2]
 
   tags = {
     Name = "az3_subnet"
