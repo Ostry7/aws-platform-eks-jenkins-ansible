@@ -65,7 +65,7 @@ resource "aws_eks_cluster" "K8s_cluster" {
 resource "aws_iam_role" "cluster" {
   name = "eks-cluster-example"
   assume_role_policy = jsonencode({
-    Version = "2012-10-17"
+
     Statement = [
       {
         Action = [
