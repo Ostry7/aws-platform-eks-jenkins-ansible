@@ -174,6 +174,7 @@ resource "aws_instance" "jenkins_agent_infra" {
   subnet_id                   = aws_subnet.jenkins_subnet.id
   vpc_security_group_ids      = [aws_security_group.jenkins_agent_sg.id]
   associate_public_ip_address = true
+  iam_instance_profile        = aws_iam_instance_profile.jenkins_agent_infra_profile.name
   tags = {
     Name = "jenkins-agent_infra"
   }
@@ -199,4 +200,32 @@ resource "aws_instance" "jenkins_agent_build" {
 # output Jenkins-agent build public IP
 output "jenkins_agent_build_private_ip" {
   value = aws_instance.jenkins_agent_build.private_ip
+}
+
+# Create IAM role
+
+resource "aws_iam_role" "jenkins_agent_infra_role" {
+  name = "jenkins-agent-infra-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "ec2.amazonaws.com"
+      }
+    }]
+  })
+}
+
+
+resource "aws_iam_role_policy_attachment" "jenkins_agent_infra_admin" {
+  role       = aws_iam_role.jenkins_agent_infra_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"  # Admin for now
+}
+
+resource "aws_iam_instance_profile" "jenkins_agent_infra_profile" {
+  name = "jenkins-agent-infra-profile"
+  role = aws_iam_role.jenkins_agent_infra_role.name
 }
