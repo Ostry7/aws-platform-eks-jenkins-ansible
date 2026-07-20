@@ -1,8 +1,8 @@
 # create vpc for K8s cluster
 resource "aws_vpc" "k8s_vpc" {
-  cidr_block       = "10.0.0.0/16"
-  instance_tenancy = "default"
-  enable_dns_hostnames  =   true
+  cidr_block           = "10.0.0.0/16"
+  instance_tenancy     = "default"
+  enable_dns_hostnames = true
 
   tags = {
     Name = "eks-vpc"
