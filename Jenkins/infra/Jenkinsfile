@@ -22,6 +22,12 @@ pipeline {
                 }
             }
         }
-
+        stage('Terraform apply') {
+            steps {
+                dir('terraform-infra'){
+                    sh 'terraform apply --auto-approve'
+                }
+            }
+        }
     }
 }
