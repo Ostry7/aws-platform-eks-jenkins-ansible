@@ -14,16 +14,14 @@ pipeline {
             }
         }
 
-        stage('Test') {
+        stage('Terraform init') {
             steps {
-                echo '[INFRA STAGE] Running unit tests...'
+                dir('terraform-infra'){
+                    sh 'terraform fmt'
+                    sh 'terraform init'
+                }
             }
         }
 
-        stage('Deploy') {
-            steps {
-                echo '[INFRA STAGE] Deploying to production...'
-            }
-        }
     }
 }
