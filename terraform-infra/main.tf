@@ -92,3 +92,19 @@ resource "aws_iam_role_policy_attachment" "cluster_AmazonEKSClusterPolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
   role       = aws_iam_role.cluster.name
 }
+
+resource "aws_eks_access_entry" "roboticusr" {
+  cluster_name  = aws_eks_cluster.K8s_cluster.name
+  principal_arn = "arn:aws:iam::718980965007:user/roboticusr"
+  type          = "STANDARD"
+}
+
+resource "aws_eks_access_policy_association" "roboticusr_admin" {
+  cluster_name  = aws_eks_cluster.K8s_cluster.name
+  principal_arn = "arn:aws:iam::718980965007:user/roboticusr"
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+
+  access_scope {
+    type = "cluster"
+  }
+}
