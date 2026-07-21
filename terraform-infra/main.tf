@@ -14,8 +14,8 @@ data "aws_availability_zones" "available" {
 }
 
 resource "aws_subnet" "az1" {
-  vpc_id     = aws_vpc.k8s_vpc.id
-  cidr_block = "10.0.1.0/24"
+  vpc_id            = aws_vpc.k8s_vpc.id
+  cidr_block        = "10.0.1.0/24"
   availability_zone = data.aws_availability_zones.available.names[0]
 
   tags = {
@@ -24,8 +24,8 @@ resource "aws_subnet" "az1" {
 }
 
 resource "aws_subnet" "az2" {
-  vpc_id     = aws_vpc.k8s_vpc.id
-  cidr_block = "10.0.2.0/24"
+  vpc_id            = aws_vpc.k8s_vpc.id
+  cidr_block        = "10.0.2.0/24"
   availability_zone = data.aws_availability_zones.available.names[1]
 
   tags = {
@@ -34,8 +34,8 @@ resource "aws_subnet" "az2" {
 }
 
 resource "aws_subnet" "az3" {
-  vpc_id     = aws_vpc.k8s_vpc.id
-  cidr_block = "10.0.3.0/24"
+  vpc_id            = aws_vpc.k8s_vpc.id
+  cidr_block        = "10.0.3.0/24"
   availability_zone = data.aws_availability_zones.available.names[2]
 
   tags = {
@@ -107,4 +107,113 @@ resource "aws_eks_access_policy_association" "roboticusr_admin" {
   access_scope {
     type = "cluster"
   }
+}
+
+# Configure EC2 Self-Managed nodes
+resource "aws_iam_role" "eks_node_role" {
+  name = "K8s_cluster-node-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "eks_worker_node_policy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+  role       = aws_iam_role.eks_node_role.name
+}
+
+resource "aws_iam_role_policy_attachment" "eks_cni_policy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+  role       = aws_iam_role.eks_node_role.name
+}
+
+resource "aws_iam_role_policy_attachment" "eks_container_registry_policy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+  role       = aws_iam_role.eks_node_role.name
+}
+
+data "aws_ssm_parameter" "eks_ami" {
+  name = "/aws/service/eks/optimized-ami/${aws_eks_cluster.K8s_cluster.version}/amazon-linux-2023/x86_64/standard/recommended/image_id"
+}
+
+resource "aws_launch_template" "eks_nodes" {
+  name                   = "K8s_cluster-node-template"
+  instance_type          = "t3.micro"
+  image_id               = data.aws_ssm_parameter.eks_ami.value
+  vpc_security_group_ids = [aws_eks_cluster.K8s_cluster.vpc_config[0].cluster_security_group_id]
+
+  iam_instance_profile {
+    name = aws_iam_instance_profile.eks_node.name
+  }
+
+  user_data = base64encode(<<-EOF
+    MIME-Version: 1.0
+    Content-Type: multipart/mixed; boundary="BOUNDARY"
+
+    --BOUNDARY
+    Content-Type: application/node.eks.aws
+
+    ---
+    apiVersion: node.eks.aws/v1alpha1
+    kind: NodeConfig
+    spec:
+      cluster:
+        name: ${aws_eks_cluster.K8s_cluster.name}
+        apiServerEndpoint: ${aws_eks_cluster.K8s_cluster.endpoint}
+        certificateAuthority: ${aws_eks_cluster.K8s_cluster.certificate_authority[0].data}
+        cidr: ${aws_eks_cluster.K8s_cluster.kubernetes_network_config[0].service_ipv4_cidr}
+
+    --BOUNDARY--
+  EOF
+  )
+
+  tag_specifications {
+    resource_type = "instance"
+    tags = {
+      Name = "K8s_cluster-node"
+    }
+  }
+}
+resource "aws_autoscaling_group" "eks_nodes" {
+  name                = "K8s_cluster-nodes"
+  desired_capacity    = 2
+  max_size            = 3
+  min_size            = 1
+  target_group_arns   = []
+  vpc_zone_identifier = [
+    aws_subnet.az1.id,
+    aws_subnet.az2.id,
+    aws_subnet.az3.id,
+  ]
+
+  launch_template {
+    id      = aws_launch_template.eks_nodes.id
+    version = "$Latest"
+  }
+
+  tag {
+    key                 = "kubernetes.io/cluster/K8s_cluster"
+    value               = "owned"
+    propagate_at_launch = true
+  }
+}
+resource "aws_iam_instance_profile" "eks_node" {
+  name = "K8s_cluster-node-instance-profile"
+  role = aws_iam_role.eks_node_role.name
+}
+
+resource "aws_eks_access_entry" "nodes" {
+  cluster_name  = aws_eks_cluster.K8s_cluster.name
+  principal_arn = aws_iam_role.eks_node_role.arn
+  type          = "EC2_LINUX"
 }
