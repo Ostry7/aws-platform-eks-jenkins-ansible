@@ -158,14 +158,45 @@
       group: jenkins
       mode: '0700'
 
-  - name: Generate SSH key pair for Jenkins master (if not exists)
-    community.crypto.openssh_keypair:
-      path: /var/lib/jenkins/.ssh/id_rsa
-      type: rsa
-      size: 4096
+  - name: Remove old SSH credential before recreating
+    community.general.jenkins_script:
+      script: |
+        import com.cloudbees.plugins.credentials.*
+        import com.cloudbees.plugins.credentials.domains.*
+        import jenkins.model.*
+        def domain = Domain.global()
+        def store = Jenkins.instance.getExtensionList(
+          'com.cloudbees.plugins.credentials.SystemCredentialsProvider'
+        )[0].getStore()
+        def cred = store.getCredentials(domain).find { it.id == 'jenkins-agent-ssh-key' }
+        if (cred != null) {
+          store.removeCredentials(domain, cred)
+        }
+      user: jenkins
+      password: "{{ admin_user_pass }}"
+
+  - name: Remove old-format key if exists
+    ansible.builtin.file:
+      path: "{{ item }}"
+      state: absent
+    loop:
+      - /var/lib/jenkins/.ssh/id_rsa
+      - /var/lib/jenkins/.ssh/id_rsa.pub
+
+  - name: Generate SSH key pair for Jenkins master (old PEM format for Trilead compatibility)
+    ansible.builtin.command:
+      cmd: ssh-keygen -m PEM -t rsa -b 4096 -f /var/lib/jenkins/.ssh/id_rsa -N "" -q
+      creates: /var/lib/jenkins/.ssh/id_rsa
+
+  - name: Fix ownership of generated key
+    ansible.builtin.file:
+      path: "{{ item }}"
       owner: jenkins
       group: jenkins
-      mode: '0600'
+      mode: "0600"
+    loop:
+      - /var/lib/jenkins/.ssh/id_rsa
+      - /var/lib/jenkins/.ssh/id_rsa.pub
 
   - name: Add GitHub PAT credential for API rate limit
     community.general.jenkins_script:
