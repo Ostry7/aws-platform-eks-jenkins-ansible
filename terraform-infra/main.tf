@@ -1,6 +1,6 @@
 # create vpc for K8s cluster
 resource "aws_vpc" "k8s_vpc" {
-  cidr_block           = "10.0.0.0/16"
+  cidr_block           = var.vpc_cidr
   instance_tenancy     = "default"
   enable_dns_hostnames = true
 
@@ -15,7 +15,7 @@ data "aws_availability_zones" "available" {
 
 resource "aws_subnet" "az1" {
   vpc_id            = aws_vpc.k8s_vpc.id
-  cidr_block        = "10.0.1.0/24"
+  cidr_block        = var.az1_cidr
   availability_zone = data.aws_availability_zones.available.names[0]
   map_public_ip_on_launch = true
   tags = {
@@ -25,7 +25,7 @@ resource "aws_subnet" "az1" {
 
 resource "aws_subnet" "az2" {
   vpc_id            = aws_vpc.k8s_vpc.id
-  cidr_block        = "10.0.2.0/24"
+  cidr_block        = var.az2_cidr
   availability_zone = data.aws_availability_zones.available.names[1]
   map_public_ip_on_launch = true
   tags = {
@@ -35,7 +35,7 @@ resource "aws_subnet" "az2" {
 
 resource "aws_subnet" "az3" {
   vpc_id            = aws_vpc.k8s_vpc.id
-  cidr_block        = "10.0.3.0/24"
+  cidr_block        = var.az3_cidr
   availability_zone = data.aws_availability_zones.available.names[2]
   map_public_ip_on_launch = true
   tags = {
@@ -44,14 +44,14 @@ resource "aws_subnet" "az3" {
 }
 
 resource "aws_eks_cluster" "K8s_cluster" {
-  name = "K8s_cluster"
+  name = "${var.eks_cluster_name}"
 
   access_config {
     authentication_mode = "API"
   }
 
   role_arn = aws_iam_role.cluster.arn
-  version  = "1.35"
+  version  = var.kubernetes_version
 
   vpc_config {
     subnet_ids = [
@@ -70,7 +70,7 @@ resource "aws_eks_cluster" "K8s_cluster" {
 }
 
 resource "aws_iam_role" "cluster" {
-  name = "eks-cluster-example"
+  name = "${var.eks_cluster_name}cluster-role"
   assume_role_policy = jsonencode({
 
     Statement = [
@@ -111,7 +111,7 @@ resource "aws_eks_access_policy_association" "roboticusr_admin" {
 
 # Configure EC2 Self-Managed nodes
 resource "aws_iam_role" "eks_node_role" {
-  name = "K8s_cluster-node-role"
+  name = "${var.eks_cluster_name}-node-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -147,8 +147,8 @@ data "aws_ssm_parameter" "eks_ami" {
 }
 
 resource "aws_launch_template" "eks_nodes" {
-  name                   = "K8s_cluster-node-template"
-  instance_type          = "t3.micro"
+  name                   = "${var.eks_cluster_name}-node-template"
+  instance_type          = var.instance_type
   image_id               = data.aws_ssm_parameter.eks_ami.value
   vpc_security_group_ids = [aws_eks_cluster.K8s_cluster.vpc_config[0].cluster_security_group_id]
 
@@ -180,15 +180,15 @@ resource "aws_launch_template" "eks_nodes" {
   tag_specifications {
     resource_type = "instance"
     tags = {
-      Name = "K8s_cluster-node"
+      Name = "${var.eks_cluster_name}-node"
     }
   }
 }
 resource "aws_autoscaling_group" "eks_nodes" {
-  name                = "K8s_cluster-nodes"
-  desired_capacity    = 2
-  max_size            = 3
-  min_size            = 1
+  name                = "${var.eks_cluster_name}-nodes"
+  desired_capacity    = var.node_desired_capacity
+  max_size            = var.node_max_size
+  min_size            = var.node_min_size
   target_group_arns   = []
   vpc_zone_identifier = [
     aws_subnet.az1.id,
@@ -202,13 +202,13 @@ resource "aws_autoscaling_group" "eks_nodes" {
   }
 
   tag {
-    key                 = "kubernetes.io/cluster/K8s_cluster"
+    key                 = "kubernetes.io/cluster/${var.eks_cluster_name}"
     value               = "owned"
     propagate_at_launch = true
   }
 }
 resource "aws_iam_instance_profile" "eks_node" {
-  name = "K8s_cluster-node-instance-profile"
+  name = "${var.eks_cluster_name}-node-instance-profile"
   role = aws_iam_role.eks_node_role.name
 }
 
@@ -222,7 +222,7 @@ resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.k8s_vpc.id
 
   tags = {
-    Name = "K8s_cluster-igw"
+    Name = "${var.eks_cluster_name}-igw"
   }
 }
 
@@ -235,7 +235,7 @@ resource "aws_route_table" "public" {
   }
 
   tags = {
-    Name = "K8s_cluster-public-rt"
+    Name = "${var.eks_cluster_name}-public-rt"
   }
 }
 
