@@ -131,6 +131,7 @@
       - credentials
       - credentials-binding
       - ssh-slaves
+      - basic-branch-build-strategies
     when: item not in installed_plugin_names
     register: plugin_result
 
