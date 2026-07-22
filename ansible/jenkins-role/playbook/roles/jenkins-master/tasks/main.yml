@@ -128,6 +128,7 @@
     loop:
       - blueocean
       - github
+      - github-branch-source
       - credentials
       - credentials-binding
       - plain-credentials
@@ -234,8 +235,23 @@
       pat_cred_result.output is defined and
       ('Exception' in pat_cred_result.output or 'Error' in pat_cred_result.output)
 
-  - debug:
-      var: pat_cred_result
+  - name: Configure GitHub server with PAT
+    community.general.jenkins_script:
+      script: |
+        import jenkins.model.*
+        import org.jenkinsci.plugins.github.config.GitHubPluginConfig
+        import org.jenkinsci.plugins.github.config.GitHubServerConfig
+        def config = Jenkins.instance.getDescriptorByType(GitHubPluginConfig.class)
+        config.getConfigs().clear()
+        def server = new GitHubServerConfig("github-pat")
+        server.setName("GitHub")
+        server.setApiUrl("https://api.github.com")
+        config.getConfigs().add(server)
+        config.save()
+        Jenkins.instance.save()
+
+    user: jenkins
+    password: "{{ admin_user_pass }}"
 
   - name: Read master's public key
     slurp:
