@@ -17,16 +17,16 @@ data "aws_ami" "ubuntu" {
 }
 
 resource "aws_vpc" "jenkins_vpc" {
-  cidr_block = "172.16.0.0/16"
+  cidr_block = var.vpc_cidr
 
   tags = {
-    Name  = "jenkins-vpc"
-    usage = "Jenkins"
+    Name  = "${var.instance_name}-vpc"
+    usage = var.usage_tag
   }
 }
 
 resource "aws_key_pair" "jenkins_key" {
-  key_name   = "jenkins-key"
+  key_name   = "${var.instance_name}-key"
   public_key = var.public_key
 }
 
@@ -36,8 +36,8 @@ resource "aws_subnet" "jenkins_subnet" {
   availability_zone = "eu-north-1a"
 
   tags = {
-    Name  = "jenkins-subnet"
-    usage = "Jenkins"
+    Name  = "${var.instance_name}-subnet"
+    usage = var.usage_tag
   }
 }
 
@@ -45,8 +45,8 @@ resource "aws_internet_gateway" "jenkins_igw" {
   vpc_id = aws_vpc.jenkins_vpc.id
 
   tags = {
-    Name  = "jenkins-igw"
-    usage = "Jenkins"
+    Name  = "${var.instance_name}-igw"
+    usage = var.usage_tag
   }
 }
 
@@ -54,13 +54,13 @@ resource "aws_route_table" "jenkins_rt" {
   vpc_id = aws_vpc.jenkins_vpc.id
 
   route {
-    cidr_block = "0.0.0.0/0"
+    cidr_block = var.security_group_cidr_blocks
     gateway_id = aws_internet_gateway.jenkins_igw.id
   }
 
   tags = {
-    Name  = "jenkins-rt"
-    usage = "Jenkins"
+    Name  = "${var.instance_name}-rt"
+    usage = var.usage_tag
   }
 }
 
@@ -70,7 +70,7 @@ resource "aws_route_table_association" "jenkins_rt_assoc" {
 }
 
 resource "aws_security_group" "jenkins_sg" {
-  name        = "jenkins-sg"
+  name        = "${var.instance_name}-sg"
   description = "Allow SSH and Jenkins UI"
   vpc_id      = aws_vpc.jenkins_vpc.id
 
@@ -79,7 +79,7 @@ resource "aws_security_group" "jenkins_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # ALL
+    cidr_blocks = [var.security_group_cidr_blocks] # ALL
   }
 
   ingress {
@@ -87,19 +87,19 @@ resource "aws_security_group" "jenkins_sg" {
     from_port   = 8080
     to_port     = 8080
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # ALL
+    cidr_blocks = [var.security_group_cidr_blocks] # ALL
   }
 
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [var.security_group_cidr_blocks]
   }
 
   tags = {
-    Name  = "jenkins-sg"
-    usage = "Jenkins"
+    Name  = "${var.instance_name}-sg"
+    usage = var.usage_tag
   }
 }
 
@@ -118,8 +118,8 @@ resource "aws_eip" "jenkins_eip" {
   network_interface = aws_network_interface.jenkins_network_interface.id
 
   tags = {
-    Name  = "jenkins-eip"
-    usage = "Jenkins"
+    Name  = "${var.instance_name}-eip"
+    usage = var.usage_tag
   }
 }
 
@@ -134,7 +134,7 @@ resource "aws_instance" "jenkinshost" {
 
   tags = {
     Name  = "jenkins-master"
-    usage = "Jenkins-Master"
+    usage = "${var.usage_tag}-Master"
   }
 
 }
@@ -222,7 +222,7 @@ resource "aws_iam_role" "jenkins_agent_infra_role" {
 
 resource "aws_iam_role_policy_attachment" "jenkins_agent_infra_admin" {
   role       = aws_iam_role.jenkins_agent_infra_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"  # Admin for now
+  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess" # Admin for now
 }
 
 resource "aws_iam_instance_profile" "jenkins_agent_infra_profile" {
