@@ -249,9 +249,8 @@
         config.getConfigs().add(server)
         config.save()
         Jenkins.instance.save()
-
-    user: jenkins
-    password: "{{ admin_user_pass }}"
+      user: jenkins
+      password: "{{ admin_user_pass }}"
 
   - name: Read master's public key
     slurp:
