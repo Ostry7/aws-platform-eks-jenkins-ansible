@@ -14,9 +14,9 @@ data "aws_availability_zones" "available" {
 }
 
 resource "aws_subnet" "az1" {
-  vpc_id            = aws_vpc.k8s_vpc.id
-  cidr_block        = var.az1_cidr
-  availability_zone = data.aws_availability_zones.available.names[0]
+  vpc_id                  = aws_vpc.k8s_vpc.id
+  cidr_block              = var.az1_cidr
+  availability_zone       = data.aws_availability_zones.available.names[0]
   map_public_ip_on_launch = true
   tags = {
     Name = "az1_subnet"
@@ -24,9 +24,9 @@ resource "aws_subnet" "az1" {
 }
 
 resource "aws_subnet" "az2" {
-  vpc_id            = aws_vpc.k8s_vpc.id
-  cidr_block        = var.az2_cidr
-  availability_zone = data.aws_availability_zones.available.names[1]
+  vpc_id                  = aws_vpc.k8s_vpc.id
+  cidr_block              = var.az2_cidr
+  availability_zone       = data.aws_availability_zones.available.names[1]
   map_public_ip_on_launch = true
   tags = {
     Name = "az2_subnet"
@@ -34,9 +34,9 @@ resource "aws_subnet" "az2" {
 }
 
 resource "aws_subnet" "az3" {
-  vpc_id            = aws_vpc.k8s_vpc.id
-  cidr_block        = var.az3_cidr
-  availability_zone = data.aws_availability_zones.available.names[2]
+  vpc_id                  = aws_vpc.k8s_vpc.id
+  cidr_block              = var.az3_cidr
+  availability_zone       = data.aws_availability_zones.available.names[2]
   map_public_ip_on_launch = true
   tags = {
     Name = "az3_subnet"
@@ -44,7 +44,7 @@ resource "aws_subnet" "az3" {
 }
 
 resource "aws_eks_cluster" "K8s_cluster" {
-  name = "${var.eks_cluster_name}"
+  name = var.eks_cluster_name
 
   access_config {
     authentication_mode = "API"
@@ -70,7 +70,7 @@ resource "aws_eks_cluster" "K8s_cluster" {
 }
 
 resource "aws_iam_role" "cluster" {
-  name = "${var.eks_cluster_name}cluster-role"
+  name = "${var.eks_cluster_name}-cluster-role"
   assume_role_policy = jsonencode({
 
     Statement = [
@@ -185,11 +185,11 @@ resource "aws_launch_template" "eks_nodes" {
   }
 }
 resource "aws_autoscaling_group" "eks_nodes" {
-  name                = "${var.eks_cluster_name}-nodes"
-  desired_capacity    = var.node_desired_capacity
-  max_size            = var.node_max_size
-  min_size            = var.node_min_size
-  target_group_arns   = []
+  name              = "${var.eks_cluster_name}-nodes"
+  desired_capacity  = var.node_desired_capacity
+  max_size          = var.node_max_size
+  min_size          = var.node_min_size
+  target_group_arns = []
   vpc_zone_identifier = [
     aws_subnet.az1.id,
     aws_subnet.az2.id,

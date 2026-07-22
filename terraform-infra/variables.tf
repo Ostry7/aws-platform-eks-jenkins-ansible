@@ -1,25 +1,25 @@
 variable "region" {
-    description =  "Specify AWS region"
-    type = string
-    default = "eu-north-1"
+  description = "Specify AWS region"
+  type        = string
+  default     = "eu-north-1"
 }
 
 variable "eks_cluster_name" {
-    description = "Name of the EKS cluster"
-    type = string
-    default = "K8s_cluster"
+  description = "Name of the EKS cluster"
+  type        = string
+  default     = "K8s_cluster"
 }
 
 variable "instance_type" {
-    description = "EC2 instance type for worker nodes"
-    type = string
-    default = "t3.micro"
+  description = "EC2 instance type for worker nodes"
+  type        = string
+  default     = "t3.micro"
 }
 
 variable "node_desired_capacity" {
-    description = "Desired number of worker nodes"
-    type = number
-    default = 2
+  description = "Desired number of worker nodes"
+  type        = number
+  default     = 2
 }
 
 variable "node_min_size" {

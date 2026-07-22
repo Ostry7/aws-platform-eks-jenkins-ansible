@@ -16,6 +16,6 @@ terraform {
 }
 
 provider "aws" {
-  region = "${var.region}" # Europe(Stockholm)
+  region = var.region # Europe(Stockholm)
   #profile = "roboticusr" #IAM created 
 }
