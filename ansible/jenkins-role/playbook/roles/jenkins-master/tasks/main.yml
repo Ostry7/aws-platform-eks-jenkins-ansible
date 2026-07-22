@@ -235,23 +235,30 @@
       pat_cred_result.output is defined and
       ('Exception' in pat_cred_result.output or 'Error' in pat_cred_result.output)
 
-  - name: Configure GitHub server with PAT
+  - name: Configure GitHub Server (API rate limit / GitHub Servers)
     community.general.jenkins_script:
       script: |
-        import jenkins.model.*
         import org.jenkinsci.plugins.github.config.GitHubPluginConfig
         import org.jenkinsci.plugins.github.config.GitHubServerConfig
-        def config = Jenkins.instance.getDescriptorByType(GitHubPluginConfig.class)
-        config.getConfigs().clear()
-        def server = new GitHubServerConfig("github-pat")
-        server.setName("GitHub")
-        server.setApiUrl("https://api.github.com")
-        config.getConfigs().add(server)
+        import jenkins.model.*
+
+        def config = GitHubPluginConfig.all().get(GitHubPluginConfig.class)
+        def existing = config.getConfigs().find { it.name == 'github.com' }
+
+        if (existing != null) {
+          existing.setCredentialsId('github-pat-secret')
+          existing.setApiUrl('https://api.github.com')
+          existing.setManageHooks(true)
+        } else {
+          def serverConfig = new GitHubServerConfig('github-pat-secret')
+          serverConfig.setName('github.com')
+          serverConfig.setApiUrl('https://api.github.com')
+          serverConfig.setManageHooks(true)
+          config.getConfigs().add(serverConfig)
+        }
         config.save()
-        Jenkins.instance.save()
       user: jenkins
       password: "{{ admin_user_pass }}"
-
   - name: Read master's public key
     slurp:
       src: /var/lib/jenkins/.ssh/id_rsa.pub
