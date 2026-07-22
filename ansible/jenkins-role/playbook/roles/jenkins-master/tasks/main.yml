@@ -200,33 +200,25 @@
       - /var/lib/jenkins/.ssh/id_rsa
       - /var/lib/jenkins/.ssh/id_rsa.pub
 
-  - name: Add or update GitHub PAT Secret Text credential (for GitHub Servers / rate limiter)
+  - name: Configure GitHub Server (API rate limit / GitHub Servers)
     community.general.jenkins_script:
       script: |
-        import com.cloudbees.plugins.credentials.*
-        import com.cloudbees.plugins.credentials.domains.*
-        import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl
-        import hudson.util.Secret
+        import org.jenkinsci.plugins.github.config.GitHubPluginConfig
+        import org.jenkinsci.plugins.github.config.GitHubServerConfig
         import jenkins.model.*
 
-        def domain = Domain.global()
-        def store = Jenkins.instance.getExtensionList(
-          'com.cloudbees.plugins.credentials.SystemCredentialsProvider'
-        )[0].getStore()
+        def config = GitHubPluginConfig.all().get(GitHubPluginConfig.class)
 
-        def existing = store.getCredentials(domain).find { it.id == 'github-pat-secret' }
-        def newCred = new StringCredentialsImpl(
-          CredentialsScope.GLOBAL,
-          'github-pat-secret',
-          'GitHub PAT (secret text) for API rate limit',
-          Secret.fromString('{{ github_pat_token }}')
-        )
+        def newServerConfig = new GitHubServerConfig('github-pat-secret')
+        newServerConfig.setName('github.com')
+        newServerConfig.setApiUrl('https://api.github.com')
+        newServerConfig.setManageHooks(true)
 
-        if (existing != null) {
-          store.updateCredentials(domain, existing, newCred)
-        } else {
-          store.addCredentials(domain, newCred)
-        }
+        def updatedList = config.getConfigs().findAll { it.name != 'github.com' }
+        updatedList.add(newServerConfig)
+
+        config.setConfigs(updatedList)
+        config.save()
       user: jenkins
       password: "{{ admin_user_pass }}"
 
