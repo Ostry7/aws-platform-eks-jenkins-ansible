@@ -130,6 +130,7 @@
       - github
       - credentials
       - credentials-binding
+      - plain-credentials
       - ssh-slaves
       - basic-branch-build-strategies
     when: item not in installed_plugin_names
@@ -199,27 +200,32 @@
       - /var/lib/jenkins/.ssh/id_rsa
       - /var/lib/jenkins/.ssh/id_rsa.pub
 
-  - name: Add GitHub PAT credential for API rate limit
+  - name: Add or update GitHub PAT Secret Text credential (for GitHub Servers / rate limiter)
     community.general.jenkins_script:
       script: |
         import com.cloudbees.plugins.credentials.*
-        import com.cloudbees.plugins.credentials.impl.*
         import com.cloudbees.plugins.credentials.domains.*
+        import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl
+        import hudson.util.Secret
         import jenkins.model.*
+
         def domain = Domain.global()
         def store = Jenkins.instance.getExtensionList(
           'com.cloudbees.plugins.credentials.SystemCredentialsProvider'
         )[0].getStore()
-        def exists = store.getCredentials(domain).any { it.id == 'github-pat' }
-        if (!exists) {
-          def cred = new UsernamePasswordCredentialsImpl(
-            CredentialsScope.GLOBAL,
-            'github-pat',
-            'GitHub PAT for API rate limit',
-            'Ostry7',
-            '{{ github_pat_token }}'
-          )
-          store.addCredentials(domain, cred)
+
+        def existing = store.getCredentials(domain).find { it.id == 'github-pat-secret' }
+        def newCred = new StringCredentialsImpl(
+          CredentialsScope.GLOBAL,
+          'github-pat-secret',
+          'GitHub PAT (secret text) for API rate limit',
+          Secret.fromString('{{ github_pat_token }}')
+        )
+
+        if (existing != null) {
+          store.updateCredentials(domain, existing, newCred)
+        } else {
+          store.addCredentials(domain, newCred)
         }
       user: jenkins
       password: "{{ admin_user_pass }}"
@@ -232,15 +238,20 @@
         import jenkins.model.*
 
         def config = GitHubPluginConfig.all().get(GitHubPluginConfig.class)
-        def exists = config.getConfigs().any { it.name == 'github.com' }
-        if (!exists) {
-          def serverConfig = new GitHubServerConfig('github-pat')
+        def existing = config.getConfigs().find { it.name == 'github.com' }
+
+        if (existing != null) {
+          existing.setCredentialsId('github-pat-secret')
+          existing.setApiUrl('https://api.github.com')
+          existing.setManageHooks(true)
+        } else {
+          def serverConfig = new GitHubServerConfig('github-pat-secret')
           serverConfig.setName('github.com')
           serverConfig.setApiUrl('https://api.github.com')
           serverConfig.setManageHooks(true)
           config.getConfigs().add(serverConfig)
-          config.save()
         }
+        config.save()
       user: jenkins
       password: "{{ admin_user_pass }}"
 
