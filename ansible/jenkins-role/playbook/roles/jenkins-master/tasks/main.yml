@@ -224,6 +224,26 @@
       user: jenkins
       password: "{{ admin_user_pass }}"
 
+  - name: Configure GitHub Server (API rate limit / GitHub Servers)
+    community.general.jenkins_script:
+      script: |
+        import org.jenkinsci.plugins.github.config.GitHubPluginConfig
+        import org.jenkinsci.plugins.github.config.GitHubServerConfig
+        import jenkins.model.*
+
+        def config = GitHubPluginConfig.all().get(GitHubPluginConfig.class)
+        def exists = config.getConfigs().any { it.name == 'github.com' }
+        if (!exists) {
+          def serverConfig = new GitHubServerConfig('github-pat')
+          serverConfig.setName('github.com')
+          serverConfig.setApiUrl('https://api.github.com')
+          serverConfig.setManageHooks(true)
+          config.getConfigs().add(serverConfig)
+          config.save()
+        }
+      user: jenkins
+      password: "{{ admin_user_pass }}"
+
   - name: Read master's public key
     slurp:
       src: /var/lib/jenkins/.ssh/id_rsa.pub
