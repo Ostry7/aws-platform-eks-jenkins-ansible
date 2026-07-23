@@ -235,30 +235,55 @@
       pat_cred_result.output is defined and
       ('Exception' in pat_cred_result.output or 'Error' in pat_cred_result.output)
 
+  - name: Add or update GitHub PAT as Secret Text credential (for GitHub Server API config)
+    community.general.jenkins_script:
+      script: |
+        import com.cloudbees.plugins.credentials.*
+        import com.cloudbees.plugins.credentials.domains.*
+        import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl
+        import hudson.util.Secret
+        import jenkins.model.*
+
+        def domain = Domain.global()
+        def store = Jenkins.instance.getExtensionList(
+          'com.cloudbees.plugins.credentials.SystemCredentialsProvider'
+        )[0].getStore()
+
+        def existing = store.getCredentials(domain).find { it.id == 'github-pat-secret' }
+        def newCred = new StringCredentialsImpl(
+          CredentialsScope.GLOBAL,
+          'github-pat-secret',
+          'GitHub PAT as Secret Text for API server config',
+          Secret.fromString('{{ github_pat_token }}')
+        )
+
+        if (existing != null) {
+          store.updateCredentials(domain, existing, newCred)
+        } else {
+          store.addCredentials(domain, newCred)
+        }
+      user: jenkins
+      password: "{{ admin_user_pass }}"
+
   - name: Configure GitHub Server (API rate limit / GitHub Servers)
     community.general.jenkins_script:
       script: |
-        import org.jenkinsci.plugins.github.config.GitHubPluginConfig
+        import org.jenkinsci.plugins.github.GitHubPlugin
         import org.jenkinsci.plugins.github.config.GitHubServerConfig
-        import jenkins.model.*
 
-        def config = GitHubPluginConfig.all().get(GitHubPluginConfig.class)
-        def existing = config.getConfigs().find { it.name == 'github.com' }
+        def pluginConfig = GitHubPlugin.configuration()
+        def serverConfig = new GitHubServerConfig('github-pat-secret')
+        serverConfig.setApiUrl('https://api.github.com')
+        serverConfig.setManageHooks(true)
+        pluginConfig.setConfigs([serverConfig])
+        pluginConfig.save()
 
-        if (existing != null) {
-          existing.setCredentialsId('github-pat-secret')
-          existing.setApiUrl('https://api.github.com')
-          existing.setManageHooks(true)
-        } else {
-          def serverConfig = new GitHubServerConfig('github-pat-secret')
-          serverConfig.setName('github.com')
-          serverConfig.setApiUrl('https://api.github.com')
-          serverConfig.setManageHooks(true)
-          config.getConfigs().add(serverConfig)
-        }
-        config.save()
+        println "Saved config, credentialsId now: " + pluginConfig.getConfigs()[0].getCredentialsId()
       user: jenkins
       password: "{{ admin_user_pass }}"
+    register: github_server_result
+
+
   - name: Read master's public key
     slurp:
       src: /var/lib/jenkins/.ssh/id_rsa.pub
