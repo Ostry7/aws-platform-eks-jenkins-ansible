@@ -21,9 +21,9 @@ pipeline {
 
         stage('Start Docker daemon') {
             steps {
-                sh 'sudo dockerd &'
+                sh 'dockerd &'
                 sh 'sleep 15'
-                sh 'sudo docker info'
+                sh 'docker info'
             }
         }
 
