@@ -157,24 +157,24 @@ resource "aws_launch_template" "eks_nodes" {
   }
 
   user_data = base64encode(<<-EOF
-    MIME-Version: 1.0
-    Content-Type: multipart/mixed; boundary="BOUNDARY"
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="BOUNDARY"
 
-    --BOUNDARY
-    Content-Type: application/node.eks.aws
+--BOUNDARY
+Content-Type: application/node.eks.aws
 
-    ---
-    apiVersion: node.eks.aws/v1alpha1
-    kind: NodeConfig
-    spec:
-      cluster:
-        name: ${aws_eks_cluster.K8s_cluster.name}
-        apiServerEndpoint: ${aws_eks_cluster.K8s_cluster.endpoint}
-        certificateAuthority: ${aws_eks_cluster.K8s_cluster.certificate_authority[0].data}
-        cidr: ${aws_eks_cluster.K8s_cluster.kubernetes_network_config[0].service_ipv4_cidr}
+---
+apiVersion: node.eks.aws/v1alpha1
+kind: NodeConfig
+spec:
+  cluster:
+    name: ${aws_eks_cluster.K8s_cluster.name}
+    apiServerEndpoint: ${aws_eks_cluster.K8s_cluster.endpoint}
+    certificateAuthority: ${aws_eks_cluster.K8s_cluster.certificate_authority[0].data}
+    cidr: ${aws_eks_cluster.K8s_cluster.kubernetes_network_config[0].service_ipv4_cidr}
 
-    --BOUNDARY--
-  EOF
+--BOUNDARY--
+EOF
   )
 
   tag_specifications {
