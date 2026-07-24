@@ -1,23 +1,40 @@
 pipeline {
-    agent { label 'build' }
+    agent { label 'build-agent' }
+
+    environment {
+        AWS_REGION = 'eu-north-1'
+        ECR_REPO = 'test'
+    }
 
     stages {
-        stage('Build') {
+        stage('Checkout Git repo') {
             steps {
-                echo '[BUILD STAGE] Building the application...'
+                checkout scmGit(
+                    branches: [[name: '*']],
+                    extensions: [],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/Ostry7/aws-platform-eks-jenkins-ansible'
+                    ]]
+)
             }
         }
 
-        stage('Test') {
+        stage('Start Docker daemon') {
             steps {
-                echo '[BUILD STAGE] Running unit tests...'
+                sh 'sudo dockerd &'
+                sh 'sleep 15'
+                sh 'sudo docker info'
             }
         }
 
-        stage('Deploy') {
-            steps {
-                echo '[BUILD STAGE] Deploying to production...'
+        stage('Login to ECR')
+            steps{
+            sh '''
+                export ecr_region=$(terraform output -raw ecr_region)
+                export ecr_account_id=$(terraform output -raw ecr_account_id)
+                aws ecr get-login-password --region $ecr_region | \
+                docker login --username AWS --password-stdin $ecr_account_id.dkr.ecr.$ecr_region.amazonaws.com
+            '''
             }
-        }
     }
 }
