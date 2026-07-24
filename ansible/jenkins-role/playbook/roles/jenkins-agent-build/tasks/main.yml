@@ -20,3 +20,15 @@
   - name: Install python
     apt: name="python3" state=present
     become: true
+
+  - name: Add jenkins user to docker group
+    ansible.builtin.user:
+      name: jenkins
+      groups: docker
+      append: true
+
+  - name: Ensure docker daemon starts on boot (systemd-managed)
+    ansible.builtin.systemd:
+      name: docker
+      enabled: true
+      state: started
