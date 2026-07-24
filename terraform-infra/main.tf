@@ -258,3 +258,19 @@ resource "aws_route_table_association" "az3" {
   subnet_id      = aws_subnet.az3.id
   route_table_id = aws_route_table.public.id
 }
+
+# Add Elastic Container Registry
+
+resource "aws_ecr_repository" "ecr" {
+  name                 = var.ecr_name
+  region = var.region
+  image_tag_mutability = "MUTABLE"
+  
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+  encryption_configuration {
+    encryption_type = "AES256"
+  }
+}
