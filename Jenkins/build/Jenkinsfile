@@ -38,12 +38,14 @@ pipeline {
         stage('Login to ECR') {
             steps {
                 dir('terraform-infra'){
+                    sh 'terraform init'
+                    script {
+                        env.ECR_REGION = sh(script: 'terraform output -raw ecr_region', returnStdout: true).trim()
+                        env.ECR_ACCOUNT_ID = sh(script: 'terraform output -raw ecr_account_id', returnStdout: true).trim()
+                    }
                     sh '''
-                    terraform init
-                    export ecr_region=$(terraform output -raw ecr_region)
-                    export ecr_account_id=$(terraform output -raw ecr_account_id)
-                    aws ecr get-login-password --region $ecr_region | \
-                    docker login --username AWS --password-stdin $ecr_account_id.dkr.ecr.$ecr_region.amazonaws.com
+                    aws ecr get-login-password --region $ECR_REGION | \
+                    docker login --username AWS --password-stdin $ECR_ACCOUNT_ID.dkr.ecr.$ECR_REGION.amazonaws.com
                 '''
                 }
             }
@@ -52,7 +54,7 @@ pipeline {
         stage('Push docker image to ECR'){
             steps{
                 dir('app') {
-                    sh "docker push $ecr_account_id.dkr.ecr.$ecr_region.amazonaws.com/${ECR_REPO}:1.${IMAGE_TAG}"
+                    sh "docker push ${env.ECR_ACCOUNT_ID}.dkr.ecr.${env.ECR_REGION}.amazonaws.com/${ECR_REPO}:1.${IMAGE_TAG}"
                     echo 'Successfully pushed image'
                 }
             }
