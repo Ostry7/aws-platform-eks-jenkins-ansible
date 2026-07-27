@@ -2,8 +2,8 @@ pipeline {
     agent { label 'build-agent' }
 
     environment {
-        AWS_REGION = 'eu-north-1'
         ECR_REPO = 'test'
+        IMAGE_TAG = "${env.BUILD_NUMBER}"
     }
 
     stages {
@@ -24,6 +24,14 @@ pipeline {
                 sh 'dockerd &'
                 sh 'sleep 15'
                 sh 'docker info'
+            }
+        }
+
+        stage('Build docker image'){
+            dir('app'){
+                steps{
+                    sh "docker build -t ${ECR_REPO}:${IMAGE_TAG} ."
+                }
             }
         }
 
