@@ -29,9 +29,15 @@ pipeline {
 
         stage('Build docker image'){
             steps {
+                dir('terraform-infra'){
+                    script{
+                        env.ECR_REPO = sh(script: 'terraform output -raw ecr_name', returnStdout: true).trim()
+                    }
+                }
                 dir('app'){
                     sh "docker build -t ${ECR_REPO}:1.${IMAGE_TAG} ."
                 }
+
             }
         }
 
@@ -54,8 +60,8 @@ pipeline {
         stage('Push docker image to ECR'){
             steps{
                 dir('app') {
-                    sh "docker tag ${ECR_REPO}:1.${IMAGE_TAG} ${env.ECR_ACCOUNT_ID}.dkr.ecr.${env.ECR_REGION}.amazonaws.com/${ECR_REPO}:1.${IMAGE_TAG}"
-                    sh "docker push ${env.ECR_ACCOUNT_ID}.dkr.ecr.${env.ECR_REGION}.amazonaws.com/${ECR_REPO}:1.${IMAGE_TAG}"
+                    sh "docker tag ${env.ECR_REPO}:1.${IMAGE_TAG} ${env.ECR_ACCOUNT_ID}.dkr.ecr.${env.ECR_REGION}.amazonaws.com/${env.ECR_REPO}:1.${IMAGE_TAG}"
+                    sh "docker push ${env.ECR_ACCOUNT_ID}.dkr.ecr.${env.ECR_REGION}.amazonaws.com/${env.ECR_REPO}:1.${IMAGE_TAG}"
                     echo 'Successfully pushed image'
                 }
             }
