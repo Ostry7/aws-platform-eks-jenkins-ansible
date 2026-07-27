@@ -34,8 +34,6 @@ pipeline {
                     terraform init
                     export ecr_region=$(terraform output -raw ecr_region)
                     export ecr_account_id=$(terraform output -raw ecr_account_id)
-                    echo $ecr_region
-                    echo $ecr_account_id
                     aws ecr get-login-password --region $ecr_region | \
                     docker login --username AWS --password-stdin $ecr_account_id.dkr.ecr.$ecr_region.amazonaws.com
                 '''
