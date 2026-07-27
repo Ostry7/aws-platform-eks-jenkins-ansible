@@ -9,3 +9,7 @@ output "ecr_account_id" {
 output "ecr_name" {
   value = aws_ecr_repository.ecr.name
 }
+
+output "eks_cluster_name" {
+  value = aws_eks_cluster.K8s_cluster.name
+}
