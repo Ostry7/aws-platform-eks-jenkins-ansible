@@ -30,7 +30,7 @@ pipeline {
         stage('Build docker image'){
             steps {
                 dir('app'){
-                    sh "docker build -t ${ECR_REPO}:${IMAGE_TAG} ."
+                    sh "docker build -t ${ECR_REPO}:1.${IMAGE_TAG} ."
                 }
             }
         }
@@ -52,7 +52,7 @@ pipeline {
         stage('Push docker image to ECR'){
             steps{
                 dir('app') {
-                    sh "docker push $ecr_account_id.dkr.ecr.$ecr_region.amazonaws.com/${ECR_REPO}:${IMAGE_TAG}"
+                    sh "docker push $ecr_account_id.dkr.ecr.$ecr_region.amazonaws.com/${ECR_REPO}:1.${IMAGE_TAG}"
                     echo 'Successfully pushed image'
                 }
             }
