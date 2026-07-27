@@ -5,3 +5,7 @@ output "ecr_region" {
 output "ecr_account_id" {
   value = data.aws_caller_identity.current.account_id
 }
+
+output "ecr_name" {
+  value = aws_ecr_repository.ecr.name
+}
