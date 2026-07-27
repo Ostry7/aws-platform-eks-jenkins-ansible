@@ -65,5 +65,28 @@ pipeline {
                 }
             }
         }
+
+        stage('Prod deploy EKS'){
+            steps {
+                dir('terraform-infra'){
+                    script{
+                        env.EKS_CLUSTER_NAME= sh(script: 'terraform output -raw eks_cluster_name', returnStdout: true).trim()
+                    }
+                }
+                script{
+                    env.IMAGE = "${ECR_REPO}:1.${IMAGE_TAG}"
+                }
+
+                sh '''
+                    aws eks update-kubeconfig --region $ECR_REGION --name $EKS_CLUSTER_NAME
+        
+                    export IMAGE
+                    envsubst < k8s/deployment.yaml | kubectl apply -f -
+                    kubectl apply -f k8s/service.yaml
+        
+                    kubectl rollout status deployment/myapp --timeout=120s
+                '''
+            }
+        }
     }
 }
