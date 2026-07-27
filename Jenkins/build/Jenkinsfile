@@ -28,8 +28,8 @@ pipeline {
         }
 
         stage('Build docker image'){
-            dir('app'){
-                steps{
+            steps {
+                dir('app'){
                     sh "docker build -t ${ECR_REPO}:${IMAGE_TAG} ."
                 }
             }
