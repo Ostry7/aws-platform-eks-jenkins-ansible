@@ -66,6 +66,6 @@ variable "az3_cidr" {
 
 variable "ecr_name" {
   description = "Name of Elastic Container Registry"
-  type = string
-  default = "main_k8s_repo"
+  type        = string
+  default     = "main_k8s_repo"
 }

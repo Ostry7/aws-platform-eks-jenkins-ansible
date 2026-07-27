@@ -263,9 +263,9 @@ resource "aws_route_table_association" "az3" {
 
 resource "aws_ecr_repository" "ecr" {
   name                 = var.ecr_name
-  region = var.region
+  region               = var.region
   image_tag_mutability = "MUTABLE"
-  
+
 
   image_scanning_configuration {
     scan_on_push = true
@@ -274,3 +274,5 @@ resource "aws_ecr_repository" "ecr" {
     encryption_type = "AES256"
   }
 }
+
+data "aws_caller_identity" "current" {}
