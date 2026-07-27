@@ -46,7 +46,15 @@ pipeline {
                     docker login --username AWS --password-stdin $ecr_account_id.dkr.ecr.$ecr_region.amazonaws.com
                 '''
                 }
+            }
+        }
 
+        stage('Push docker image to ECR'){
+            steps{
+                dir('app') {
+                    sh "docker push $ecr_account_id.dkr.ecr.$ecr_region.amazonaws.com/${ECR_REPO}:${IMAGE_TAG}"
+                    echo 'Successfully pushed image'
+                }
             }
         }
     }
