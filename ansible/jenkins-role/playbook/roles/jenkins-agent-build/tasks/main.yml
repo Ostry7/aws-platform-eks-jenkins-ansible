@@ -49,3 +49,14 @@
       name: docker
       enabled: true
       state: started
+
+  - name: Download kubectl
+    get_url:
+      url: "https://dl.k8s.io/v1.35.5/bin/linux/amd64/kubectl"
+      dest: /usr/local/bin/kubectl
+      mode: '0755'
+
+  - name: Install gettext-base (envsubst)
+    apt:
+      name: gettext-base
+      state: present
