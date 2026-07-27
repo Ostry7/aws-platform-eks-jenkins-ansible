@@ -192,9 +192,57 @@ resource "aws_instance" "jenkins_agent_build" {
   subnet_id                   = aws_subnet.jenkins_subnet.id
   vpc_security_group_ids      = [aws_security_group.jenkins_agent_sg.id]
   associate_public_ip_address = true
+  iam_instance_profile        = aws_iam_instance_profile.jenkins_agent_build_profile.name
   tags = {
     Name = "jenkins-agent_build"
   }
+}
+
+resource "aws_iam_role" "jenkins_agent_build_role" {
+  name = "jenkins-agent-build-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "ec2.amazonaws.com" }
+    }]
+  })
+}
+
+# add priviledge to access S3 and ECR
+resource "aws_iam_role_policy_attachment" "jenkins_agent_build_ecr" {
+  role       = aws_iam_role.jenkins_agent_build_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser"
+}
+
+# add priviledges for read S3 terraform backend
+resource "aws_iam_role_policy" "jenkins_agent_build_s3_state" {
+  name = "jenkins-agent-build-s3-state-access"
+  role = aws_iam_role.jenkins_agent_build_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          "arn:aws:s3:::jenkins-tfstate-ostry7",
+          "arn:aws:s3:::jenkins-tfstate-ostry7/*"
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_instance_profile" "jenkins_agent_build_profile" {
+  name = "jenkins-agent-build-profile"
+  role = aws_iam_role.jenkins_agent_build_role.name
 }
 
 # output Jenkins-agent build public IP
