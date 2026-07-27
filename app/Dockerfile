@@ -1,18 +1,25 @@
-# Base python image
-FROM python:3.14.3
+# ---- Build stage ----
+FROM python:3.14.3-alpine AS build-env
 
-# Set working dir
 WORKDIR /app
 
-# Copy and install all dependencies
-COPY requirements.txt .
-RUN pip install -r requirements.txt
+# Alpine needs a compiler/headers for packages with native C extensions
+RUN apk add --no-cache gcc musl-dev libffi-dev
 
-# Copy app code
+COPY requirements.txt .
+RUN pip install --user -r requirements.txt
+
+# ---- Final stage ----
+FROM python:3.14.3-alpine
+
+WORKDIR /app
+
+# Copy only the installed packages from the build stage, without the build toolchain
+COPY --from=build-env /root/.local /root/.local
 COPY app.py .
 
-# Expose 5000 port
+ENV PATH=/root/.local/bin:$PATH
+
 EXPOSE 5000
 
-# Run the app
 CMD [ "python", "app.py" ]
