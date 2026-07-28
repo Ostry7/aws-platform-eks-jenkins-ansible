@@ -240,6 +240,28 @@ resource "aws_iam_role_policy" "jenkins_agent_build_s3_state" {
   })
 }
 
+# add access priviledges for EKS
+resource "aws_iam_role_policy" "jenkins_agent_build_eks_access" {
+  name = "jenkins-agent-build-eks-access"
+  role = aws_iam_role.jenkins_agent_build_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "eks:DescribeCluster",
+          "eks:ListClusters"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+
+
 resource "aws_iam_instance_profile" "jenkins_agent_build_profile" {
   name = "jenkins-agent-build-profile"
   role = aws_iam_role.jenkins_agent_build_role.name
@@ -251,7 +273,6 @@ output "jenkins_agent_build_private_ip" {
 }
 
 # Create IAM role
-
 resource "aws_iam_role" "jenkins_agent_infra_role" {
   name = "jenkins-agent-infra-role"
 
