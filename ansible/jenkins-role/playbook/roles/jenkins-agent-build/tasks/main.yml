@@ -24,10 +24,26 @@
       remote_src: true
       mode: '0755'
 
-  - name: Install AWS CLI
+  - name: Download AWS CLI v2 installer
+    get_url:
+      url: https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip
+      dest: /tmp/awscliv2.zip
+
+  - name: Unzip AWS CLI v2 installer
+    unarchive:
+      src: /tmp/awscliv2.zip
+      dest: /tmp
+      remote_src: true
+
+  - name: Remove old AWS CLI if exists
     apt:
       name: awscli
-      state: present
+      state: absent
+
+  - name: Install AWS CLI v2
+    command: /tmp/aws/install
+    args:
+      creates: /usr/local/bin/aws
 
   - name: Install Docker
     apt:
