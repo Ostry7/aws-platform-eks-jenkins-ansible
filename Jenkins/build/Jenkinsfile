@@ -30,6 +30,7 @@ pipeline {
             steps {
                 dir('terraform-infra'){
                     script{
+                        sh 'terraform init'
                         env.ECR_REPO = sh(script: 'terraform output -raw ecr_name', returnStdout: true).trim()
                     }
                 }
