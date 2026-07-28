@@ -76,7 +76,7 @@ pipeline {
                     }
                 }
                 script{
-                    env.IMAGE = "${ECR_REPO}:1.${IMAGE_TAG}"
+                    env.IMAGE = "${ECR_ACCOUNT_ID}.dkr.ecr.${ECR_REGION}.amazonaws.com/${ECR_REPO}:1.${IMAGE_TAG}"
                 }
 
                 sh '''
