@@ -276,3 +276,21 @@ resource "aws_ecr_repository" "ecr" {
 }
 
 data "aws_caller_identity" "current" {}
+
+
+# add Access Entry in EKS
+resource "aws_eks_access_entry" "jenkins_build_agent" {
+  cluster_name  = aws_eks_cluster.K8s_cluster.name
+  principal_arn = "arn:aws:iam::718980965007:role/jenkins-agent-build-role"
+  type          = "STANDARD"
+}
+
+resource "aws_eks_access_policy_association" "jenkins_build_agent_admin" {
+  cluster_name  = aws_eks_cluster.K8s_cluster.name
+  principal_arn = "arn:aws:iam::718980965007:role/jenkins-agent-build-role"
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSEditPolicy"
+
+  access_scope {
+    type = "cluster"
+  }
+}
