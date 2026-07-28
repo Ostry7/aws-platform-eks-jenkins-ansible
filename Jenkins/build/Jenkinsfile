@@ -32,6 +32,7 @@ pipeline {
                     script{
                         sh 'terraform init'
                         env.ECR_REPO = sh(script: 'terraform output -raw ecr_name', returnStdout: true).trim()
+                        sh "echo ${env.ECR_REPO} and ${env.IMAGE_TAG}"
                     }
                 }
                 dir('app'){
