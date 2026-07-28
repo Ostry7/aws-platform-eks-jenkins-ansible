@@ -68,6 +68,27 @@ pipeline {
             }
         }
 
+        stage('Create DB secret') {
+            steps {
+                dir('terraform-infra') {
+                    script {
+                        env.DB_HOST     = sh(script: 'terraform output -raw db_host', returnStdout: true).trim()
+                        env.DB_PASSWORD = sh(script: 'terraform output -raw db_password', returnStdout: true).trim()
+            }
+        }
+
+        sh '''
+            kubectl create secret generic db-credentials \
+              --from-literal=DB_HOST=$DB_HOST \
+              --from-literal=DB_PORT=5432 \
+              --from-literal=DB_NAME=devops_db \
+              --from-literal=DB_USER=postgres \
+              --from-literal=DB_PASSWORD=$DB_PASSWORD \
+              --dry-run=client -o yaml | kubectl apply -f -
+        '''
+    }
+}
+
         stage('Prod deploy EKS'){
             steps {
                 dir('terraform-infra'){
