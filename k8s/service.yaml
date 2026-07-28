@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: prod_app
+  name: prod-app
 spec:
   type: LoadBalancer
   selector:
-    app: prod_app
+    app: prod-app
   ports:
     - port: 80
       targetPort: 5000
