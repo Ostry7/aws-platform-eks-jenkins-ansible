@@ -4,6 +4,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "6.52.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6"
+    }
   }
   backend "s3" {
     bucket         = "jenkins-tfstate-ostry7"

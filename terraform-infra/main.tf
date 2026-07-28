@@ -294,3 +294,62 @@ resource "aws_eks_access_policy_association" "jenkins_build_agent_admin" {
     type = "cluster"
   }
 }
+
+# Add RDS
+resource "random_password" "db_password" {
+  length  = 20
+  special = false
+}
+
+resource "aws_db_subnet_group" "db_subnet_group" {
+  name = "${var.eks_cluster_name}-db-subnets"
+  subnet_ids = [
+    aws_subnet.az1.id,
+    aws_subnet.az2.id,
+    aws_subnet.az3.id,
+  ]
+}
+
+resource "aws_security_group" "rds_sg" {
+  name   = "${var.eks_cluster_name}-rds-sg"
+  vpc_id = aws_vpc.k8s_vpc.id
+
+  ingress {
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [aws_eks_cluster.K8s_cluster.vpc_config[0].cluster_security_group_id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_db_instance" "postgres" {
+  identifier             = "${var.eks_cluster_name}-postgres"
+  engine                 = "postgres"
+  engine_version         = "16.4"
+  instance_class         = "db.t3.micro"
+  allocated_storage      = 20
+  db_name                = "devops_db"
+  username               = "postgres"
+  password               = random_password.db_password.result
+  db_subnet_group_name   = aws_db_subnet_group.db_subnet_group.name
+  vpc_security_group_ids = [aws_security_group.rds_sg.id]
+  publicly_accessible    = false
+  skip_final_snapshot    = true
+  storage_encrypted      = true
+}
+
+output "db_host" {
+  value = aws_db_instance.postgres.address
+}
+
+output "db_password" {
+  value     = random_password.db_password.result
+  sensitive = true
+}
