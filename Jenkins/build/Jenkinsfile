@@ -86,7 +86,7 @@ pipeline {
                     envsubst < k8s/deployment.yaml | kubectl apply -f -
                     kubectl apply -f k8s/service.yaml
         
-                    kubectl rollout status deployment/myapp --timeout=120s
+                    kubectl rollout status deployment/prod-app --timeout=120s
                 '''
             }
         }
