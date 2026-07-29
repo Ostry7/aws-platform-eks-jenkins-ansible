@@ -105,8 +105,9 @@ pipeline {
         stage('Prod deploy EKS'){
             steps {
                 dir('terraform-infra'){
-                script{
-                    env.IMAGE = "${env.ECR_ACCOUNT_ID}.dkr.ecr.${env.ECR_REGION}.amazonaws.com/${env.ECR_REPO}:1.${env.IMAGE_TAG}"
+                    script{
+                        env.IMAGE = "${env.ECR_ACCOUNT_ID}.dkr.ecr.${env.ECR_REGION}.amazonaws.com/${env.ECR_REPO}:1.${env.IMAGE_TAG}"
+                    }
                 }
 
                 sh '''
