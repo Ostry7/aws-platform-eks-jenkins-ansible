@@ -82,10 +82,13 @@ pipeline {
             steps {
                 dir('terraform-infra') {
                     script {
+                        env.EKS_CLUSTER_NAME= sh(script: 'terraform output -raw eks_cluster_name', returnStdout: true).trim()
                         env.DB_HOST     = sh(script: 'terraform output -raw db_host', returnStdout: true).trim()
                         env.DB_PASSWORD = sh(script: 'terraform output -raw db_password', returnStdout: true).trim()
             }
         }
+
+        sh 'aws eks update-kubeconfig --region $ECR_REGION --name $EKS_CLUSTER_NAME'
 
         sh '''
             kubectl create secret generic db-credentials \
@@ -102,21 +105,14 @@ pipeline {
         stage('Prod deploy EKS'){
             steps {
                 dir('terraform-infra'){
-                    script{
-                        env.EKS_CLUSTER_NAME= sh(script: 'terraform output -raw eks_cluster_name', returnStdout: true).trim()
-                    }
-                }
                 script{
                     env.IMAGE = "${env.ECR_ACCOUNT_ID}.dkr.ecr.${env.ECR_REGION}.amazonaws.com/${env.ECR_REPO}:1.${env.IMAGE_TAG}"
                 }
 
                 sh '''
-                    aws eks update-kubeconfig --region $ECR_REGION --name $EKS_CLUSTER_NAME
-        
                     export IMAGE
                     envsubst < k8s/deployment.yaml | kubectl apply -f -
                     kubectl apply -f k8s/service.yaml
-        
                     kubectl rollout status deployment/prod-app --timeout=120s
                 '''
             }
