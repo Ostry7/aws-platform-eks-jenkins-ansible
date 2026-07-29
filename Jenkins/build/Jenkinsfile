@@ -121,13 +121,16 @@ pipeline {
         stage('Init DB schema'){
             steps{
                 sh '''
-                    kubectl run psql-init --rm --restart=Never --image=postgres:16 \
+                    kubectl run psql-init --restart=Never --image=postgres:16 \
                       --env="PGPASSWORD=$DB_PASSWORD" \
-                      --overrides='{"spec":{"containers":[{"name":"psql-init","image":"postgres:16","command":["sleep","30"]}]}}' \
-                      -- sleep 30 &
-                    sleep 5
+                      --command -- sleep 300
+        
+                    kubectl wait --for=condition=Ready pod/psql-init --timeout=60s
+        
                     kubectl cp app/init-db.sql psql-init:/tmp/init.sql
                     kubectl exec psql-init -- psql -h $DB_HOST -U postgres -d devops_db -f /tmp/init.sql
+        
+                    kubectl delete pod psql-init
                 '''
             }
         }
