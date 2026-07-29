@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name:  prod-app
-  namespace: default
+  namespace: prod
   labels:
     app:  prod-app
 spec:
@@ -23,6 +23,9 @@ spec:
       containers:
       - name: prod-app
         image: ${IMAGE}
+        env:
+        - name: ENV
+          value: "production"
         ports:
         - containerPort: 5000
         envFrom:
