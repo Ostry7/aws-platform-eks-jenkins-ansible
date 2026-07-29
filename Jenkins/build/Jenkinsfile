@@ -126,7 +126,7 @@ pipeline {
                       --overrides='{"spec":{"containers":[{"name":"psql-init","image":"postgres:16","command":["sleep","30"]}]}}' \
                       -- sleep 30 &
                     sleep 5
-                    kubectl cp db/init.sql psql-init:/tmp/init.sql
+                    kubectl cp app/init.sql psql-init:/tmp/init.sql
                     kubectl exec psql-init -- psql -h $DB_HOST -U postgres -d devops_db -f /tmp/init.sql
                 '''
             }
