@@ -5,6 +5,12 @@ pipeline {
         IMAGE_TAG = "${env.BUILD_NUMBER}"
     }
 
+    stages{
+        steps{
+            sh 'sleep '
+        }
+    }
+
     stages {
         stage('Checkout Git repo') {
             steps {
