@@ -5,13 +5,17 @@ pipeline {
         IMAGE_TAG = "${env.BUILD_NUMBER}"
     }
 
-    stages{
-        steps{
-            sh 'sleep '
-        }
-    }
-
     stages {
+        stage('Sleep only during indexing') {
+            when {
+                triggeredBy 'BranchIndexingCause'
+            }
+            steps {
+                echo "It's indexing phase so I need to wait for ECR and EKS deployment first"
+                sh 'sleep 600'
+            }
+        }
+
         stage('Checkout Git repo') {
             steps {
                 checkout scmGit(
@@ -103,7 +107,7 @@ pipeline {
                     }
                 }
                 script{
-                    env.IMAGE = "${ECR_ACCOUNT_ID}.dkr.ecr.${ECR_REGION}.amazonaws.com/${ECR_REPO}:1.${IMAGE_TAG}"
+                    env.IMAGE = "${env.ECR_ACCOUNT_ID}.dkr.ecr.${env.ECR_REGION}.amazonaws.com/${env.ECR_REPO}:1.${env.IMAGE_TAG}"
                 }
 
                 sh '''
