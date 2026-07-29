@@ -111,6 +111,7 @@ pipeline {
                 }
 
                 sh '''
+                    kubectl apply -f k8s/namespace.yaml
                     export IMAGE
                     envsubst < k8s/deployment.yaml | kubectl apply -f -
                     kubectl apply -f k8s/service.yaml
@@ -124,12 +125,12 @@ pipeline {
                     kubectl run psql-init --restart=Never --image=postgres:16 \
                       --env="PGPASSWORD=$DB_PASSWORD" \
                       --command -- sleep 300
-        
+
                     kubectl wait --for=condition=Ready pod/psql-init --timeout=60s
-        
+
                     kubectl cp app/init-db.sql psql-init:/tmp/init.sql
                     kubectl exec psql-init -- psql -h $DB_HOST -U postgres -d devops_db -f /tmp/init.sql
-        
+
                     kubectl delete pod psql-init
                 '''
             }
