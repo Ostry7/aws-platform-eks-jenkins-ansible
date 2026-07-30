@@ -111,6 +111,7 @@ pipeline {
                 }
 
                 sh '''
+                    aws eks update-kubeconfig --region $ECR_REGION --name $EKS_CLUSTER_NAME
                     kubectl apply -f k8s/namespace.yaml
                     export IMAGE
                     envsubst < k8s/deployment.yaml | kubectl apply -f -
