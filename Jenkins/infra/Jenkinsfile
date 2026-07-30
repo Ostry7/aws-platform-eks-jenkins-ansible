@@ -25,6 +25,7 @@ pipeline {
         stage('Terraform apply') {
             steps {
                 dir('terraform-infra'){
+                    sh 'aws eks update-kubeconfig --region $ECR_REGION --name $EKS_CLUSTER_NAME'
                     sh 'terraform apply --auto-approve'
                 }
             }
