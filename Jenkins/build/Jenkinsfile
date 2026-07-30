@@ -92,6 +92,7 @@ pipeline {
 
         sh '''
             kubectl create secret generic db-credentials \
+              --namespace prod \
               --from-literal=DB_HOST=$DB_HOST \
               --from-literal=DB_PORT=5432 \
               --from-literal=DB_NAME=devops_db \
@@ -116,7 +117,7 @@ pipeline {
                     export IMAGE
                     envsubst < k8s/deployment.yaml | kubectl apply -f -
                     kubectl apply -f k8s/service.yaml
-                    kubectl rollout status deployment/prod-app --timeout=120s
+                    kubectl rollout status deployment/prod-app -n prod --timeout=120s
                 '''
             }
         }
