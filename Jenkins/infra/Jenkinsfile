@@ -25,12 +25,12 @@ pipeline {
         stage('Terraform apply') {
             steps {
                 dir('terraform-infra'){
+                    sh 'terraform apply --auto-approve'
                     script {
                         env.ECR_REGION = sh(script: 'terraform output -raw ecr_region', returnStdout: true).trim()
                         env.EKS_CLUSTER_NAME = sh(script: 'terraform output -raw ecr_cluster_name', returnStdout: true).trim()
                     }
                     sh 'aws eks update-kubeconfig --region $ECR_REGION --name $EKS_CLUSTER_NAME'
-                    sh 'terraform apply --auto-approve'
                 }
             }
         }
