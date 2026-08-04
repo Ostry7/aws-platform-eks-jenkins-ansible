@@ -17,10 +17,13 @@
       remote_src: true
       mode: '0755'
 
-  - name: Install AWS CLI
-    apt:
-      name: awscli
-      state: present
+  - name: Install/upgrade AWS CLI v2
+    shell: |
+      curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+      unzip -o awscliv2.zip
+      sudo ./aws/install --update
+    args:
+      chdir: /tmp
 
   - name: Allow passwordless sudo for jenkins agent user
     lineinfile:
