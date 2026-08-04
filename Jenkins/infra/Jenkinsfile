@@ -36,7 +36,7 @@ pipeline {
         }
         stage('Install Helm'){
             steps{
-                sh """
+                sh '''
                     HELM_BUILDKITE_APT_KEY_ID="DDF78C3E6EBB2D2CC223C95C62BA89D07698DBC6"
                     
                     sudo apt-get install curl gpg apt-transport-https --yes
@@ -51,7 +51,7 @@ pipeline {
                     
                     sudo apt-get update
                     sudo apt-get install helm -y
-                """
+                '''
             }
         }
     }
