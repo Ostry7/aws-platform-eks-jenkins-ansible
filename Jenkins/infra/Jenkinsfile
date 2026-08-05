@@ -34,6 +34,16 @@ pipeline {
                 }
             }
         }
+        stage('Configure kubectl') {
+            steps {
+                sh '''
+                    mkdir -p ~/.kube
+                    aws eks update-kubeconfig --region ${ECR_REGION} --name ${EKS_CLUSTER_NAME}
+                    kubectl cluster-info
+                    kubectl get nodes
+                '''
+            }
+        }
         stage('Install Helm'){
             steps{
                 sh '''
