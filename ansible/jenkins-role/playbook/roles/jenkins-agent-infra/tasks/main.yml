@@ -25,22 +25,11 @@
     args:
       chdir: /tmp
       
-  - name: Add Kubernetes repository key
-    apt_key:
-      url: https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key
-      state: present
-
-  - name: Add Kubernetes repository
-    apt_repository:
-      repo: deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /
-      state: present
-      filename: kubernetes.list
-
-  - name: Install kubectl via apt
-    apt:
-      name: kubectl
-      state: present
-      update_cache: yes
+  - name: Download kubectl
+    get_url:
+      url: "https://dl.k8s.io/v1.35.5/bin/linux/amd64/kubectl"
+      dest: /usr/local/bin/kubectl
+      mode: '0755'
 
   - name: Allow passwordless sudo for jenkins agent user
     lineinfile:
