@@ -346,3 +346,19 @@ resource "aws_db_instance" "postgres" {
   storage_encrypted      = true
 }
 
+# Add Access Entry for Jenkins agent infra
+resource "aws_eks_access_entry" "jenkins_infra_agent" {
+  cluster_name  = aws_eks_cluster.K8s_cluster.name
+  principal_arn = "arn:aws:iam::718980965007:role/jenkins-agent-infra-role"
+  type          = "STANDARD"
+}
+
+resource "aws_eks_access_policy_association" "jenkins_infra_agent_admin" {
+  cluster_name  = aws_eks_cluster.K8s_cluster.name
+  principal_arn = "arn:aws:iam::718980965007:role/jenkins-agent-infra-role"
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+
+  access_scope {
+    type = "cluster"
+  }
+}
