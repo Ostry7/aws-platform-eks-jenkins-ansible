@@ -20,12 +20,15 @@ spec:
       labels:
         app:  prod-app
     spec:
+      serviceAccountName: myapp-sa 
       containers:
       - name: prod-app
         image: ${IMAGE}
         env:
         - name: ENV
           value: "production"
+        - name: VAULT_ADDR   
+          value: "http://vault.vault.svc.cluster.local:8200"
         ports:
         - containerPort: 5000
         envFrom:
@@ -38,4 +41,3 @@ spec:
           limits:
             cpu: 100m
             memory: 100Mi
-     
