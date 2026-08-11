@@ -7,6 +7,7 @@ import psycopg2
 import psycopg2.extras
 import os
 import random
+import hvac # for HashiCorp Vault
 
 app = Flask(__name__)
 metrics = PrometheusMetrics(app)
@@ -17,13 +18,30 @@ health_counter = Counter('health_requests_total', 'Total number of /health reque
 crud_counter   = Counter('crud_operations_total', 'Total CRUD operations', ['table', 'operation'])
 
 # ── DB connection ──────────────────────────────────────────────────────────────
+def get_db_credentials():
+    client = hvac.Client(url=os.getenv("VAULT_ADDR", "http://vault.vault.svc.cluster.local:8200"))
+
+    # Autoryzacja przez K8s Service Account token, który jest automatycznie
+    # zamontowany w podzie pod tą ścieżką
+    with open("/var/run/secrets/kubernetes.io/serviceaccount/token") as f:
+        jwt = f.read()
+
+    client.auth.kubernetes.login(role="app-role-binding", jwt=jwt)
+
+    secret = client.secrets.database.generate_credentials(
+        name="app-role",
+        mount_point="postgres"
+    )
+    return secret["data"]["username"], secret["data"]["password"]
+
 def get_db():
+    user, password = get_db_credentials()
     return psycopg2.connect(
         host     = os.getenv("DB_HOST",     "localhost"),
         port     = os.getenv("DB_PORT",     "5432"),
         dbname   = os.getenv("DB_NAME",     "devops_db"),
-        user     = os.getenv("DB_USER",     "postgres"),
-        password = os.getenv("DB_PASSWORD", "postgres"),
+        user     = user,
+        password = password,
     )
 
 # ── HTML template ──────────────────────────────────────────────────────────────
