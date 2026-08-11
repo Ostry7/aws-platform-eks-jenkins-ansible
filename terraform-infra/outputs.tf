@@ -22,3 +22,11 @@ output "db_password" {
   value     = random_password.db_password.result
   sensitive = true
 }
+
+output "db_name" {
+  value = aws_db_instance.postgres.db_name
+  }
+
+output "eks_endpoint"{
+  value = aws_eks_cluster.K8s_cluster.endpoint
+}
