@@ -70,7 +70,7 @@ pipeline {
                 sh '''
                     helm repo add hashicorp https://helm.releases.hashicorp.com
                     helm repo update
-                    helm install vault hashicorp/vault --namespace vault --create-namespace --set "server.dev.enabled=true" 
+                    helm upgrade --install vault hashicorp/vault --namespace vault --create-namespace --set "server.dev.enabled=true" 
                 '''
             }
         }
