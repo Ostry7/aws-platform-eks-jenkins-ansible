@@ -74,5 +74,22 @@ pipeline {
                 '''
             }
         }
+        stage('Set database password rotation'){
+            steps{
+                dir('terraform-infra'){
+                    sh 'terraform apply --auto-approve'
+                    script {
+                        env.DB_NAME = sh(script: 'terraform output -raw db_name', returnStdout: true).trim()
+                        env.EKS_CLUSTER_NAME = sh(script: 'terraform output -raw eks_cluster_name', returnStdout: true).trim()
+                    }
+                    sh '''
+                        vault secrets enable -path=postgres database
+                        vault write postgres/roles/app-role \
+                        db_name=$DB_NAME \
+                        creation_statements="CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}'; GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO \"{{name}}\";"
+                    '''
+                }
+            }   
+        }
     }
 }
