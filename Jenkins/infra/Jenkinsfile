@@ -70,7 +70,12 @@ pipeline {
                 sh '''
                     helm repo add hashicorp https://helm.releases.hashicorp.com
                     helm repo update
-                    helm upgrade --install vault hashicorp/vault --namespace vault --create-namespace --set "server.dev.enabled=true" 
+
+                    if helm status vault -n vault > /dev/null 2>&1; then
+                        echo "Vault already installed, skipping"
+                    else
+                        helm install vault hashicorp/vault --namespace vault --create-namespace --set "server.dev.enabled=true"
+                    fi
                 '''
             }
         }
