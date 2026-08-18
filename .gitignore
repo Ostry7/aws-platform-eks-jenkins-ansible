@@ -50,3 +50,4 @@ terraform.rc
 # planout
 
 del_whole_infra.sh
+force_delete_env.sh
