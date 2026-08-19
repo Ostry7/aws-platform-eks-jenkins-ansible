@@ -96,10 +96,19 @@ pipeline {
                         env.DB_NAME = sh(script: 'terraform output -raw db_name', returnStdout: true).trim()
                     }
                     sh '''
+                        # port forward to pod
+                        kubectl port-forward -n vault svc/vault 8200:8200 & PF_PID=$!
+                        sleep 10
+
+                        export VAULT_ADDR="http://127.0.0.1:8200"
+                        export VAULT_TOKEN="root"
+
                         vault secrets enable -path=postgres database
                         vault write postgres/roles/app-role \
                         db_name=$DB_NAME \
-                        creation_statements="CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}'; GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO \"{{name}}\";"
+                        creation_statements="CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}'; GRANT ALL PRIVILEGES ON DATABASE DB_NAME TO \"{{name}}\";"
+
+                        kill $PF_PID
                     '''
                 }
             }   
