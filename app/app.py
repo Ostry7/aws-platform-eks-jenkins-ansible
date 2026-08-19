@@ -26,7 +26,7 @@ def get_db_credentials():
     with open("/var/run/secrets/kubernetes.io/serviceaccount/token") as f:
         jwt = f.read()
 
-    client.auth.kubernetes.login(role="app-role-binding", jwt=jwt)
+    client.auth.kubernetes.login(role="app-role", jwt=jwt)
 
     secret = client.secrets.database.generate_credentials(
         name="app-role",
