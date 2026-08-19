@@ -152,7 +152,7 @@ pipeline {
 
                         vault write postgres/roles/app-role \
                             db_name=postgres \
-                            creation_statements="CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}'; GRANT ALL PRIVILEGES ON DATABASE \"$DB_NAME\" TO \"{{name}}\";"
+                            creation_statements="CREATE ROLE \\\"{{name}}\\\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}'; GRANT ALL PRIVILEGES ON DATABASE \\\"$DB_NAME\\\" TO \\\"{{name}}\\\";"
 
                         kill $PF_PID
                     '''
