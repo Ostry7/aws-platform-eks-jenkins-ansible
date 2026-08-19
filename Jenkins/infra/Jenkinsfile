@@ -115,7 +115,7 @@ pipeline {
                     EOF
 
                     vault write auth/kubernetes/role/app-role \
-                        bound_service_account_names=prod-app-sa \
+                        bound_service_account_names=myapp-sa \
                         bound_service_account_namespaces=prod \
                         policies=app-policy \
                         ttl=1h
