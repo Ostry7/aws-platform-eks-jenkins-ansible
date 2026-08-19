@@ -72,7 +72,7 @@ pipeline {
                         echo "Vault already installed, upgrading config"
                         helm upgrade vault hashicorp/vault --namespace vault \
                             --set "server.dev.enabled=true" \
-                            --set "injector.enabled=true"
+                            --set "injector.enabled=true" \
                             --force
                     else
                         helm install vault hashicorp/vault --namespace vault --create-namespace \
