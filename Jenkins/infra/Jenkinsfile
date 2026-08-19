@@ -73,6 +73,7 @@ pipeline {
                         helm upgrade vault hashicorp/vault --namespace vault \
                             --set "server.dev.enabled=true" \
                             --set "injector.enabled=true"
+                            --force
                     else
                         helm install vault hashicorp/vault --namespace vault --create-namespace \
                             --set "server.dev.enabled=true" \
