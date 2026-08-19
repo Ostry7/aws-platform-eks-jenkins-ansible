@@ -68,13 +68,15 @@ pipeline {
         stage('Install Hashicorp Vault'){
             steps{
                 sh '''
-                    helm repo add hashicorp https://helm.releases.hashicorp.com
-                    helm repo update
-
                     if helm status vault -n vault > /dev/null 2>&1; then
-                        echo "Vault already installed, skipping"
+                        echo "Vault already installed, upgrading config"
+                        helm upgrade vault hashicorp/vault --namespace vault \
+                            --set "server.dev.enabled=true" \
+                            --set "injector.enabled=true"
                     else
-                        helm install vault hashicorp/vault --namespace vault --create-namespace --set "server.dev.enabled=true"
+                        helm install vault hashicorp/vault --namespace vault --create-namespace \
+                            --set "server.dev.enabled=true" \
+                            --set "injector.enabled=true"
                     fi
                 '''
             }
@@ -88,12 +90,48 @@ pipeline {
                 '''
     }
 }
+
+        stage('Configure Vault Kubernetes Auth'){
+            steps{
+                sh '''
+                    kubectl port-forward -n vault svc/vault 8200:8200 &
+                    PF_PID=$!
+                    sleep 5
+
+                    export VAULT_ADDR="http://127.0.0.1:8200"
+                    export VAULT_TOKEN="root"
+
+                    if ! vault auth list | grep -q "kubernetes/"; then
+                        vault auth enable kubernetes
+                    fi
+
+                    vault write auth/kubernetes/config \
+                        kubernetes_host="https://kubernetes.default.svc:443"
+
+                    cat <<EOF | vault policy write app-policy -
+                    path "postgres/creds/app-role" {
+                      capabilities = ["read"]
+                    }
+                    EOF
+
+                    vault write auth/kubernetes/role/app-role \
+                        bound_service_account_names=prod-app-sa \
+                        bound_service_account_namespaces=prod \
+                        policies=app-policy \
+                        ttl=1h
+
+                    kill $PF_PID
+                '''
+    }
+}
         stage('Set database password rotation'){
             steps{
                 dir('terraform-infra'){
                     sh 'terraform apply --auto-approve'
                     script {
                         env.DB_NAME = sh(script: 'terraform output -raw db_name', returnStdout: true).trim()
+                        env.DB_HOST = sh(script: 'terraform output -raw db_host', returnStdout: true).trim()
+                        env.DB_ADMIN_PASSWORD = sh(script: 'terraform output -raw db_password', returnStdout: true).trim()
                     }
                     sh '''
                         # port forward to pod
@@ -104,9 +142,16 @@ pipeline {
                         export VAULT_TOKEN="root"
 
                         vault secrets enable -path=postgres database
+                        vault write postgres/config/connection \
+                            plugin_name=postgresql-database-plugin \
+                            connection_url="postgresql://{{username}}:{{password}}@$DB_HOST:5432/$DB_NAME?sslmode=disable" \
+                            allowed_roles="app-role" \
+                            username="postgres" \
+                            password="$DB_ADMIN_PASSWORD"
+
                         vault write postgres/roles/app-role \
-                        db_name=$DB_NAME \
-                        creation_statements="CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}'; GRANT ALL PRIVILEGES ON DATABASE DB_NAME TO \"{{name}}\";"
+                            db_name=postgres \
+                            creation_statements="CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}'; GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO \"{{name}}\";"
 
                         kill $PF_PID
                     '''
