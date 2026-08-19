@@ -133,14 +133,16 @@ pipeline {
                         env.DB_ADMIN_PASSWORD = sh(script: 'terraform output -raw db_password', returnStdout: true).trim()
                     }
                     sh '''
-                        # port forward to pod
                         kubectl port-forward -n vault svc/vault 8200:8200 & PF_PID=$!
                         sleep 10
 
                         export VAULT_ADDR="http://127.0.0.1:8200"
                         export VAULT_TOKEN="root"
 
-                        vault secrets enable -path=postgres database
+                        if ! vault secrets list | grep -q "^postgres/"; then
+                            vault secrets enable -path=postgres database
+                        fi
+
                         vault write postgres/config/connection \
                             plugin_name=postgresql-database-plugin \
                             connection_url="postgresql://{{username}}:{{password}}@$DB_HOST:5432/$DB_NAME?sslmode=disable" \
