@@ -143,7 +143,7 @@ pipeline {
                             vault secrets enable -path=postgres database
                         fi
 
-                        vault write postgres/config/connection \
+                        vault write postgres/config/postgres \
                             plugin_name=postgresql-database-plugin \
                             connection_url="postgresql://{{username}}:{{password}}@$DB_HOST:5432/$DB_NAME?sslmode=disable" \
                             allowed_roles="app-role" \
