@@ -91,8 +91,8 @@ pipeline {
         sh 'aws eks update-kubeconfig --region $ECR_REGION --name $EKS_CLUSTER_NAME'
 
         sh '''
-            kubectl apply -f k8s/serviceaccount.yaml
             kubectl apply -f k8s/namespace.yaml
+            kubectl apply -f k8s/serviceaccount.yaml
             kubectl create secret generic db-credentials \
               --namespace prod \
               --from-literal=DB_HOST=$DB_HOST \
