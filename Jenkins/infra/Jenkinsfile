@@ -70,10 +70,10 @@ pipeline {
                 sh '''
                     if helm status vault -n vault > /dev/null 2>&1; then
                         echo "Vault already installed, upgrading config"
+                        kubectl delete mutatingwebhookconfiguration vault-agent-injector-cfg --ignore-not-found
                         helm upgrade vault hashicorp/vault --namespace vault \
                             --set "server.dev.enabled=true" \
-                            --set "injector.enabled=true" \
-                            --force
+                            --set "injector.enabled=true"
                     else
                         helm install vault hashicorp/vault --namespace vault --create-namespace \
                             --set "server.dev.enabled=true" \
