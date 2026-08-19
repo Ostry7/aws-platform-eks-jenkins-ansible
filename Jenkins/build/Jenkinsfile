@@ -98,8 +98,6 @@ pipeline {
               --from-literal=DB_HOST=$DB_HOST \
               --from-literal=DB_PORT=5432 \
               --from-literal=DB_NAME=devops_db \
-              --from-literal=DB_USER=postgres \
-              --from-literal=DB_PASSWORD=$DB_PASSWORD \
               --dry-run=client -o yaml | kubectl apply -f -
         '''
     }
@@ -124,6 +122,11 @@ pipeline {
         }
         stage('Init DB schema'){
             steps{
+                    dir('terraform-infra') {
+                        script{
+                            env.DB_PASSWORD = sh(script: 'terraform output -raw db_password', returnStdout: true).trim()
+                        }
+                    }
                 sh '''
                     kubectl run psql-init --restart=Never --image=postgres:16 \
                       --env="PGPASSWORD=$DB_PASSWORD" \
