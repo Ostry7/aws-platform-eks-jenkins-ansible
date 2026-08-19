@@ -91,38 +91,36 @@ pipeline {
                 '''
     }
 }
-
         stage('Configure Vault Kubernetes Auth'){
-            steps{
-                sh '''
-                    kubectl port-forward -n vault svc/vault 8200:8200 &
-                    PF_PID=$!
-                    sleep 5
+    steps{
+        sh '''
+            kubectl port-forward -n vault svc/vault 8200:8200 &
+            PF_PID=$!
+            sleep 5
 
-                    export VAULT_ADDR="http://127.0.0.1:8200"
-                    export VAULT_TOKEN="root"
+            export VAULT_ADDR="http://127.0.0.1:8200"
+            export VAULT_TOKEN="root"
 
-                    if ! vault auth list | grep -q "kubernetes/"; then
-                        vault auth enable kubernetes
-                    fi
+            if ! vault auth list | grep -q "kubernetes/"; then
+                vault auth enable kubernetes
+            fi
 
-                    vault write auth/kubernetes/config \
-                        kubernetes_host="https://kubernetes.default.svc:443"
+            vault write auth/kubernetes/config \
+                kubernetes_host="https://kubernetes.default.svc:443"
 
-                    cat <<EOF | vault policy write app-policy -
-                    path "postgres/creds/app-role" {
-                      capabilities = ["read"]
-                    }
-                    EOF
+            echo 'path "postgres/creds/app-role" {' > /tmp/app-policy.hcl
+            echo '  capabilities = ["read"]' >> /tmp/app-policy.hcl
+            echo '}' >> /tmp/app-policy.hcl
+            vault policy write app-policy /tmp/app-policy.hcl
 
-                    vault write auth/kubernetes/role/app-role \
-                        bound_service_account_names=myapp-sa \
-                        bound_service_account_namespaces=prod \
-                        policies=app-policy \
-                        ttl=1h
+            vault write auth/kubernetes/role/app-role \
+                bound_service_account_names=myapp-sa \
+                bound_service_account_namespaces=prod \
+                policies=app-policy \
+                ttl=1h
 
-                    kill $PF_PID
-                '''
+            kill $PF_PID
+        '''
     }
 }
         stage('Set database password rotation'){
