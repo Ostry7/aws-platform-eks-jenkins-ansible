@@ -68,6 +68,9 @@ pipeline {
         stage('Install Hashicorp Vault'){
             steps{
                 sh '''
+                    helm repo add hashicorp https://helm.releases.hashicorp.com
+                    helm repo update
+                    
                     if helm status vault -n vault > /dev/null 2>&1; then
                         echo "Vault already installed, upgrading config"
                         kubectl delete mutatingwebhookconfiguration vault-agent-injector-cfg --ignore-not-found
