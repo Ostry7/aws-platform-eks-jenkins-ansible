@@ -382,6 +382,7 @@ HTML = """<!DOCTYPE html>
 <header>
   <div class="logo">devops<span>/</span>portfolio <span>— db manager</span></div>
   <div class="env-badge">{{ env }}</div>
+  <div class="env-badge" title="container image tag">img: {{ image_tag }}</div>
   <div class="db-badge {{ 'dr' if db_mode == 'DR' else 'primary' }}">
     db: {{ db_mode }}
   </div>
