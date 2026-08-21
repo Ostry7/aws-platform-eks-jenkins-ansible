@@ -29,6 +29,8 @@ spec:
           value: "production"
         - name: VAULT_ADDR   
           value: "http://vault.vault.svc.cluster.local:8200"
+        - name: IMAGE_TAG
+          value: "${IMAGE_TAG}"
         ports:
         - containerPort: 5000
         envFrom:
