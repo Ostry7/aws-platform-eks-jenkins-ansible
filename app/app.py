@@ -647,7 +647,8 @@ def index():
         return render_template_string(HTML,
             users=users, products=products,
             env=os.getenv("ENV", "dev"),
-            db_mode=os.getenv("DB_MODE", "PRIMARY"))
+            db_mode=os.getenv("DB_MODE", "PRIMARY"),
+            image_tag=os.getenv("IMAGE_TAG", "unknown"))
     except Exception as e:
         return f"<pre>DB error: {e}</pre>", 500
 
