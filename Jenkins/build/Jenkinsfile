@@ -46,7 +46,11 @@ pipeline {
                     }
                 }
                 dir('app'){
-                    sh "docker build -t ${ECR_REPO}:1.${IMAGE_TAG} ."
+                    script{
+                        env.FULL_IMAGE_TAG = "1.${IMAGE_TAG}"
+                        sh "docker build -t ${ECR_REPO}:1.${FULL_IMAGE_TAG} ."
+                    }
+                    
                 }
 
             }
@@ -113,7 +117,8 @@ pipeline {
 
                 sh '''
                     aws eks update-kubeconfig --region $ECR_REGION --name $EKS_CLUSTER_NAME
-                    export IMAGE
+                    export IMAGE=$ECR_REPO:$FULL_IMAGE_TAG
+                    export IMAGE_TAG=$FULL_IMAGE_TAG
                     envsubst < k8s/deployment.yaml | kubectl apply -f -
                     kubectl apply -f k8s/service.yaml
                     kubectl rollout status deployment/prod-app -n prod --timeout=120s
