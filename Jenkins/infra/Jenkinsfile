@@ -1,6 +1,10 @@
 pipeline {
     agent { label 'infra-agent' }
 
+    environment {
+        KUBECONFIG = "${WORKSPACE}/.kube/config"
+    }
+
     stages {
         stage('Checkout Git repo') {
             steps {
@@ -26,11 +30,6 @@ pipeline {
             steps {
                 dir('terraform-infra'){
                     sh 'terraform apply --auto-approve'
-                    script {
-                        env.ECR_REGION = sh(script: 'terraform output -raw ecr_region', returnStdout: true).trim()
-                        env.EKS_CLUSTER_NAME = sh(script: 'terraform output -raw eks_cluster_name', returnStdout: true).trim()
-                    }
-                    sh 'aws eks update-kubeconfig --region $ECR_REGION --name $EKS_CLUSTER_NAME'
                 }
             }
         }
@@ -39,10 +38,16 @@ pipeline {
                 sh 'aws sts get-caller-identity'
                 sh '''
                     sleep 15
-                    mkdir -p ~/.kube
-                    aws eks update-kubeconfig --region ${ECR_REGION} --name ${EKS_CLUSTER_NAME}
+                    mkdir -p "$WORKSPACE/.kube"
+                    aws eks update-kubeconfig \
+                    --region "$ECR_REGION" \
+                    --name "$EKS_CLUSTER_NAME" \
+                    --kubeconfig "$KUBECONFIG"
+
+                    kubectl config current-context
                     kubectl cluster-info
                     kubectl get nodes
+
                 '''
             }
         }
