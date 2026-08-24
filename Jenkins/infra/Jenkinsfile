@@ -38,6 +38,7 @@ pipeline {
             steps {
                 sh 'aws sts get-caller-identity'
                 sh '''
+                    sleep 15
                     mkdir -p ~/.kube
                     aws eks update-kubeconfig --region ${ECR_REGION} --name ${EKS_CLUSTER_NAME}
                     kubectl cluster-info
