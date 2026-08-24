@@ -30,6 +30,10 @@ pipeline {
             steps {
                 dir('terraform-infra'){
                     sh 'terraform apply --auto-approve'
+                    script {
+                        env.ECR_REGION = sh(script: 'terraform output -raw ecr_region', returnStdout: true).trim()
+                        env.EKS_CLUSTER_NAME = sh(script: 'terraform output -raw eks_cluster_name', returnStdout: true).trim()
+                    }
                 }
             }
         }
