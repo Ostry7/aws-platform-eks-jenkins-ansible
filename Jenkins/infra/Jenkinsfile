@@ -39,20 +39,40 @@ pipeline {
         }
         stage('Configure kubectl') {
             steps {
-                sh 'aws sts get-caller-identity'
                 sh '''
-                    sleep 15
-                    mkdir -p "$WORKSPACE/.kube"
-                    aws eks update-kubeconfig \
-                    --region "$ECR_REGION" \
-                    --name "$EKS_CLUSTER_NAME" \
-                    --kubeconfig "$KUBECONFIG"
+            set -eux
 
-                    kubectl config current-context
-                    kubectl cluster-info
-                    kubectl get nodes
+            echo "=== AWS identity ==="
+            aws sts get-caller-identity
 
-                '''
+            echo "=== AWS environment ==="
+            env | grep '^AWS_' || true
+
+            echo "=== AWS CLI ==="
+            aws --version
+
+            echo "=== kubectl ==="
+            kubectl version --client
+
+            echo "=== kubeconfig ==="
+            aws eks update-kubeconfig \
+                --region "$ECR_REGION" \
+                --name "$EKS_CLUSTER_NAME" \
+                --kubeconfig "$KUBECONFIG"
+
+            kubectl config current-context
+
+            echo "=== kubeconfig user ==="
+            kubectl config view --raw --minify
+
+            echo "=== EKS token ==="
+            aws eks get-token \
+                --region "$ECR_REGION" \
+                --cluster-name "$EKS_CLUSTER_NAME"
+
+            echo "=== Kubernetes API ==="
+            kubectl get nodes -v=8
+            '''
             }
         }
         stage('Install Helm'){
