@@ -48,7 +48,7 @@ pipeline {
                 dir('app'){
                     script{
                         env.FULL_IMAGE_TAG = "1.${IMAGE_TAG}"
-                        sh "docker build -t ${ECR_REPO}:1.${FULL_IMAGE_TAG} ."
+                        sh "docker build -t ${ECR_REPO}:${FULL_IMAGE_TAG} ."
                     }
                     
                 }
@@ -75,8 +75,8 @@ pipeline {
         stage('Push docker image to ECR'){
             steps{
                 dir('app') {
-                    sh "docker tag ${env.ECR_REPO}:1.${IMAGE_TAG} ${env.ECR_ACCOUNT_ID}.dkr.ecr.${env.ECR_REGION}.amazonaws.com/${env.ECR_REPO}:1.${IMAGE_TAG}"
-                    sh "docker push ${env.ECR_ACCOUNT_ID}.dkr.ecr.${env.ECR_REGION}.amazonaws.com/${env.ECR_REPO}:1.${IMAGE_TAG}"
+                    sh "docker tag ${env.ECR_REPO}:${FULL_IMAGE_TAG} ${env.ECR_ACCOUNT_ID}.dkr.ecr.${env.ECR_REGION}.amazonaws.com/${env.ECR_REPO}:${FULL_IMAGE_TAG}"
+                    sh "docker push ${env.ECR_ACCOUNT_ID}.dkr.ecr.${env.ECR_REGION}.amazonaws.com/${env.ECR_REPO}:${FULL_IMAGE_TAG}"
                     echo 'Successfully pushed image'
                 }
             }
@@ -117,7 +117,7 @@ pipeline {
 
                 sh '''
                     aws eks update-kubeconfig --region $ECR_REGION --name $EKS_CLUSTER_NAME
-                    export IMAGE=$ECR_REPO:$FULL_IMAGE_TAG
+                    export IMAGE=$ECR_ACCOUNT_ID.dkr.ecr.$ECR_REGION.amazonaws.com/$ECR_REPO:$FULL_IMAGE_TAG
                     export IMAGE_TAG=$FULL_IMAGE_TAG
                     envsubst < k8s/deployment.yaml | kubectl apply -f -
                     kubectl apply -f k8s/service.yaml
