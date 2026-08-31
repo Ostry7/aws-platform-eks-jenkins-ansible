@@ -82,7 +82,7 @@ The workflow expects the following repository secrets:
 
 ## Roadmap:
 
-### **Stage 1 - Infrastructure foundation with Terraform**
+# **Stage 1 - Infrastructure foundation with Terraform**
 
 This workflow (`meta-pipeline.yml`) automates the entire process of standing up the Jenkins environment on AWS from scratch — from infrastructure to configuration. It's manually triggered (`workflow_dispatch`), giving full control over when provisioning runs.
 
@@ -104,7 +104,7 @@ This workflow (`meta-pipeline.yml`) automates the entire process of standing up 
 - **ProxyJump pattern**: agents sit on private IPs; SSH access flows through the master, matching a real bastion-style network layout.
 - **Secrets handling**: AWS credentials, SSH key (base64-encoded), Jenkins password, and GitHub PAT are all injected via GitHub Actions secrets — nothing hardcoded.
 
-### **Stage 2 – Server configuration with Ansible**
+# **Stage 2 – Server configuration with Ansible**
 
 This stage takes the raw EC2 instances provisioned in Stage 1 and turns them into a working Jenkins cluster: a fully unlocked, plugin-ready master and two purpose-built agents, all wired together and registered automatically. Driven by a single top-level playbook (`site.yml`) across four roles plus a final "register agents" play.
 
@@ -142,3 +142,70 @@ Both node-creation scripts are idempotent (`if (Jenkins.instance.getNode(...) ==
 - **Labels tie jobs to capability**: agents are labelled `build` and `terraform` so Jenkins pipeline stages can target the right tool-equipped node.
 - **Master-as-bastion carries over from Stage 1**: the master's public key (generated here) is what lets it reach into the agents over SSH for the Jenkins launcher, same private-network pattern used for provisioning.
  
+# **Stage 3 – Application + Dockerfile**
+
+A multi-stage `Dockerfile` builds the Flask application into a small, production-ready image, which the `build-pipeline` Jenkins job builds and pushes to ECR.
+
+## Dockerfile breakdown
+ 
+### Build stage (`build-env`)
+- Based on `python:3.14.3-alpine` — small base image.
+- Installs `gcc`, `musl-dev`, `libffi-dev` — Alpine's minimal libc (musl) means Python packages with native C extensions need a compiler and headers to build from source; these aren't needed at runtime.
+- Copies only `requirements.txt` first and installs dependencies with `pip install --user`, so Docker's layer cache can skip the (usually slow) dependency install step when only application code changes.
+### Final stage
+- Fresh `python:3.14.3-alpine` base — no build toolchain, keeping the final image small and reducing attack surface.
+- Copies **only** the installed packages (`/root/.local`) from the build stage — the compiler and headers from the build stage are left behind entirely.
+- Copies in `app.py`.
+- Adds `/root/.local/bin` to `PATH` so user-installed console scripts are reachable.
+- Exposes port `5000` (Flask's default) and runs the app directly with `python app.py`.
+## Key design points
+ 
+- **Multi-stage build**: keeps build-only dependencies (compiler, headers) out of the final image — smaller size, smaller attack surface.
+- **Alpine base**: minimizes image size, at the cost of needing to explicitly install build tooling for any C-extension packages.
+- **Layer-cache-friendly ordering**: `requirements.txt` is copied and installed before the rest of the app code, so dependency layers are only rebuilt when dependencies actually change.
+- **Built and pushed by the build pipeline**: this Dockerfile is consumed by the `build-agent`'s Jenkins pipeline, which builds the image and pushes it to ECR as part of the CI/CD flow.
+
+# **Stage 4 – CI/CD pipeline with Jenkins**
+
+Two multibranch pipeline jobs — `main-build-pipeline` and `main-infra-pipeline` — are auto-discovered from GitHub (via the `github-pat` credential set up in Stage 2) and defined by `Jenkinsfile`s at `Jenkins/build/Jenkinsfile` and `Jenkins/infra/Jenkinsfile` respectively. Both use branch + PR discovery traits, so any branch or pull request automatically gets a pipeline run.
+
+## Build pipeline (`build-agent`)
+ 
+Builds, pushes, and deploys the application image.
+ 
+1. **Indexing guard** – if the run was triggered by branch indexing (not a real push), it just sleeps for 10 minutes instead of running the full pipeline, avoiding redundant work while ECR/EKS state is settled elsewhere.
+2. **Checkout** – pulls the repo from GitHub.
+3. **Start Docker daemon** – launches `dockerd` manually and waits for it, since the agent doesn't run Docker as a system service.
+4. **Build image** – reads the ECR repo name from Terraform output (`terraform-infra`), tags the image `1.<BUILD_NUMBER>`, and builds it from the `app/` directory.
+5. **Login to ECR** – pulls region and account ID from Terraform outputs, authenticates Docker against ECR using `aws ecr get-login-password`.
+6. **Push image** – tags and pushes the image to the ECR repo.
+7. **Create DB secret** – fetches the EKS cluster name and DB host/password from Terraform, updates the kubeconfig, applies the namespace/service account manifests, and creates (or updates) a `db-credentials` Kubernetes secret via `kubectl create --dry-run=client | kubectl apply`, keeping the operation idempotent.
+8. **Prod deploy to EKS** – builds the full image reference, updates kubeconfig, then uses `envsubst` to template `k8s/deployment.yaml` with the image tag before applying it, applies the service manifest, and waits on rollout status (2 min timeout).
+9. **Init DB schema** – spins up a temporary `postgres:16` pod, waits for it to be ready, copies `init-db.sql` into it, runs it against the database with `psql`, then deletes the pod — a disposable job runner pattern for one-off DB initialization.
+## Infra pipeline (`infra-agent`)
+ 
+Applies infrastructure changes and keeps Vault/Helm configured.
+ 
+1. **Checkout** – pulls the repo.
+2. **Terraform init** – formats and initializes the `terraform-infra` working directory.
+3. **Terraform apply** – applies infra changes, then reads back the ECR region and EKS cluster name as outputs.
+4. **Configure kubectl** – a verbose diagnostic stage (`set -eux`, AWS identity, kubeconfig, EKS token, `kubectl get nodes -v=8`) that updates the kubeconfig for this workspace and confirms cluster connectivity before proceeding.
+5. **Install Helm** – adds Helm's apt repo with GPG key fingerprint verification (explicit key-ID check to guard against a compromised mirror), then installs it via apt.
+6. **Install HashiCorp Vault** – adds the HashiCorp Helm repo and installs (or upgrades) Vault into the `vault` namespace in dev mode, with the Vault Agent Injector enabled. On upgrade, first removes the old mutating webhook to avoid stale webhook conflicts.
+7. **Install Vault CLI** – adds HashiCorp's apt repo and installs the `vault` CLI on the agent.
+8. **Configure Vault Kubernetes Auth** – port-forwards to the in-cluster Vault service, enables the Kubernetes auth method (if not already enabled), points it at the in-cluster API server, writes an `app-policy` granting read access to dynamic Postgres credentials, and binds that policy to a `app-role` scoped to the `myapp-sa` service account in the `prod` namespace.
+9. **Set database password rotation** – re-applies Terraform to pull fresh DB outputs, enables Vault's `database` secrets engine at `postgres/` (if not already enabled), configures the Postgres connection plugin with admin credentials, and defines the `app-role` creation statements (dynamic role creation, grants on tables/sequences/schema) that Vault uses to hand out short-lived DB credentials to the app.
+## Job definitions (`init-job.xml`)
+ 
+Both jobs are `WorkflowMultiBranchProject`s created from XML in Stage 2 (via `jenkins_job`). Key shared configuration:
+- **Source**: `GitHubSCMSource` pointed at `Ostry7/aws-platform-eks-jenkins-ansible`, authenticated with the `github-pat` credential.
+- **Traits**: branch discovery + origin/fork PR discovery, so pushes and PRs both trigger builds.
+- **Orphaned item strategy**: dead branches are pruned automatically, keeping the job list clean as branches are merged/deleted.
+- **Factory**: each project factory points at its own `Jenkinsfile` path (`Jenkins/build/Jenkinsfile` / `Jenkins/infra/Jenkinsfile`), so both pipelines live in the same repo but run independent logic.
+## Key design points
+ 
+- **Separation of concerns**: build/push/deploy logic and infra/Vault/Helm logic are split into two independent pipelines with separate agent labels, matching the tool split from Stage 2.
+- **Terraform as the source of truth for runtime values**: both pipelines read ECR/EKS/DB connection details from `terraform output` rather than hardcoding them, keeping infra and pipeline config in sync.
+- **Dynamic secrets via Vault**: the app doesn't get static DB credentials — Vault issues short-lived Postgres roles per the `app-role` policy, reducing the blast radius of a leaked credential.
+- **Idempotent Kubernetes operations**: secret creation and Helm install/upgrade both check current state first, so pipeline reruns don't fail on "already exists" errors.
+- **Disposable job runner for DB init**: rather than baking schema init into the app image, a throwaway `psql` pod handles it and is deleted immediately after.
